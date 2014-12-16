@@ -22,6 +22,11 @@ class Biont_SubPlugins_PluginsModel {
 	private $installed_plugins = array();
 
 	/**
+	 * @var array
+	 */
+	private $active_plugins = array();
+
+	/**
 	 * Parse the arguments and set the class variables
 	 *
 	 * @param       $plugin_folder
@@ -43,26 +48,33 @@ class Biont_SubPlugins_PluginsModel {
 		$this->page_title = $args[ 'page_title' ];
 		$this->menu_title = $args[ 'menu_title' ];
 
+		//add_action('current_screen','var_dump');
+		//global $pagenow;
+		//echo '<p>'.$pagenow.'</p>';
+
 	}
 
 	/**
 	 * Add hooks for adding settings and menus and then load the active plugins
 	 */
 	public function register() {
-
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu_pages' ), 0 );
+
+		$this->active_plugins = get_option( $this->prefix . '_active_plugins', array() );
+
+		if(isset($_GET[$this->prefix.'_plugins_changed'])){
+			$this->change_plugin_status();
+		}
 		$this->load_plugins();
+
 	}
 
 	/**
 	 * Register a setting where our active plugins are stored
 	 */
 	public function register_settings() {
-
-		register_setting(
-			$this->prefix . '-plugins', $this->prefix . '_active_plugins', array( $this, 'change_plugin_status' )
-		);
+		register_setting($this->prefix . '-plugins', $this->prefix . '_active_plugins');
 	}
 
 	/**
@@ -110,6 +122,13 @@ class Biont_SubPlugins_PluginsModel {
 
 					if ( ! empty( $data[ 'Name' ] ) ) {
 						$data[ 'File' ] = basename( $filename );
+
+						if (in_array($data['File'], $this->active_plugins)) {
+							$data['Active'] = TRUE;
+						} else {
+							$data['Active'] = FALSE;
+						}
+
 						$this->installed_plugins[ ] = $data;
 					}
 
@@ -127,55 +146,20 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	public function load_plugins() {
 
-		$active = get_option( $this->prefix . '_active_plugins' );
-		if ( $active != NULL && is_array( $active ) ) {
-			foreach ( $active as $plugin ) {
+			foreach ( $this->active_plugins as $plugin ) {
 				$filename = $this->plugin_folder . '/' . basename(
 						$plugin, '.php'
 					) . '/' . $plugin;
 				include_once( $filename );
 			}
-		}
 	}
 
 	/**
 	 * Callback for register_setting
 	 *
-	 * @param $plugins
-	 *
 	 * @return array
 	 */
-	public function change_plugin_status( $plugins ) {
-
-		//Does this function make any sense whatsoever? I need to have another look at it
-
-		if ( $plugins == NULL ) {
-			$plugins = array();
-		}
-		//        $active_plugins = $admin->get_active_plugins();
-
-		$active = get_option( $this->prefix . '_active_plugins' );
-
-		$activated_plugins = array_intersect( $plugins, $active );
-
-		$installed_plugins = $this->get_installed_plugins();
-
-
-		//        exit;
-		return $plugins;
-	}
-
-	/**
-	 * Render the settings page for this plugin.
-	 *
-	 * First  handle plugin de/activation and then spawn the view
-	 *
-	 * @since    1.0.0
-	 */
-	public function display_plugin_page() {
-
-		$installed_plugins = $this->get_installed_plugins();
-		$active_plugins = get_option( $this->prefix . '_active_plugins', array() );
+	public function change_plugin_status() {
 
 		//Handle Plugin actions:
 		if ( isset( $_GET[ 'action' ] ) ) {
@@ -185,7 +169,7 @@ class Biont_SubPlugins_PluginsModel {
 
 			if ( $_GET[ 'action' ] == 'activate' ) {
 
-				if ( ! in_array( $_GET[ 'plugin' ], $active_plugins ) ) {
+				if ( ! in_array( $_GET[ 'plugin' ], $this->active_plugins ) ) {
 					$active_plugins[ ] = $_GET[ 'plugin' ];
 					update_option( $this->prefix . '_active_plugins', $active_plugins );
 					do_action( 'activate_' . plugin_basename( $filename ) );
@@ -197,22 +181,34 @@ class Biont_SubPlugins_PluginsModel {
 					include_once( $filename );
 
 				}
+
 			}
 
 			if ( $_GET[ 'action' ] == 'deactivate' ) {
 
-				if ( FALSE !== $key = array_search( $_GET[ 'plugin' ], $active_plugins ) ) {
-					unset( $active_plugins[ $key ] );
-					update_option( $this->prefix . '_active_plugins', $active_plugins );
+				if ( FALSE !== $key = array_search( $_GET[ 'plugin' ], $this->active_plugins ) ) {
+					unset( $this->active_plugins[ $key ] );
+					update_option( $this->prefix . '_active_plugins', $this->active_plugins );
 					do_action( 'deactivate_' . plugin_basename( $filename ) );
 				}
 			}
 		}
+	}
+
+	/**
+	 * Render the settings page for this plugin.
+	 *
+	 * First  handle plugin de/activation and then spawn the view
+	 *
+	 * @since    1.0.0
+	 */
+	public function display_plugin_page() {
+		$installed_plugins = $this->get_installed_plugins();
 
 		do_action( $this->prefix . '_plugin_activation' );
 
 		// Add the actual plugin page
-		$view = new Biont_SubPlugins_PluginsView( $installed_plugins, $active_plugins );
+		$view = new Biont_SubPlugins_PluginsView( $installed_plugins, $this->active_plugins , $this->prefix);
 		$view->show();
 	}
 

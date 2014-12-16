@@ -14,11 +14,14 @@ class Biont_SubPlugins_PluginsView
 
     private $active_plugins = array();
 
-    public function __construct($installed_plugins, $active_plugins)
+    private $prefix = '';
+
+    public function __construct($installed_plugins, $active_plugins, $prefix)
     {
 
         $this->installed_plugins = $installed_plugins;
         $this->active_plugins = $active_plugins;
+        $this->prefix = $prefix;
     }
 
     public function show()
@@ -33,7 +36,7 @@ class Biont_SubPlugins_PluginsView
             <form id="sub_plugins" method="get">
                 <input type="hidden" name="page" value="<?php echo $_REQUEST['page'] ?>"/>
                 <?php
-                $table = new Biont_SubPlugins_PluginListTable($this->installed_plugins, $this->active_plugins);
+                $table = new Biont_SubPlugins_PluginListTable($this->installed_plugins, $this->prefix);
                 $table->prepare_items();
                 $table->display();
                 ?>

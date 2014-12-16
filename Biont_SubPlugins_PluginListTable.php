@@ -11,21 +11,11 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table
 {
 
 
-    function __construct($installed, $active)
+    function __construct($installed, $prefix)
     {
         $this->installed = $installed;
-        $this->active = $active;
+        $this->prefix = $prefix;
 
-
-// TODO: We should do this right after loading the plugins, so that the information is available for everyone
-        foreach ($this->installed as &$installed) {
-            if (in_array($installed['File'], $this->active)) {
-                $installed['Active'] = TRUE;
-            } else {
-                $installed['Active'] = FALSE;
-            }
-
-        }
 
         //Set parent defaults
         parent::__construct(array(
@@ -85,19 +75,21 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table
         $actions = array();
 
         if ($item['Active'] === TRUE) {
-            $actions['deactivate'] = sprintf('<a href="%s&action=%s&%s=%s">%s</a>',
+            $actions['deactivate'] = sprintf('<a href="%s&action=%s&%s=%s&%s_plugins_changed=1">%s</a>',
                 $screen,
                 'deactivate',
                 $this->_args['singular'],
                 esc_attr($item['File']),
+                $this->prefix,
                 __('Deactivate')
             );
         } else {
-            $actions['activate'] = sprintf('<a href="%s&action=%s&%s=%s">%s</a>',
+            $actions['activate'] = sprintf('<a href="%s&action=%s&%s=%s&%s_plugins_changed=1">%s</a>',
                 $screen,
                 'activate',
                 $this->_args['singular'],
                 esc_attr($item['File']),
+                $this->prefix,
                 __('Activate')
             );
         }
