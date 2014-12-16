@@ -90,8 +90,8 @@ class Biont_SubPlugins_PluginsModel {
 	public function get_installed_plugins() {
 
 		if ( $this->installed_plugins == NULL ) {
-			foreach ( glob( $this->plugin_folder . '/*', GLOB_ONLYDIR ) as $plugin ) {
-				if ( file_exists( $filename = $plugin . '/' . basename( $plugin ) . '.php' ) ) {
+			foreach ( glob( $this->plugin_folder . '/*', GLOB_ONLYDIR ) as $plugin_folder ) {
+				if ( file_exists( $filename = $plugin_folder . '/' . basename( $plugin_folder ) . '.php' ) ) {
 					$data = get_file_data(
 						$filename, array(
 							'Name'        => strtoupper( $this->prefix ) . '-Plugin Name',
@@ -107,13 +107,15 @@ class Biont_SubPlugins_PluginsModel {
 							'DomainPath'  => 'Domain Path',
 						)
 					);
+
+					if ( ! empty( $data[ 'Name' ] ) ) {
+						$data[ 'File' ] = basename( $filename );
+						$this->installed_plugins[ ] = $data;
+					}
+
 				}
 
-				if ( ! empty( $data[ 'Name' ] ) ) {
-					$data[ 'File' ] = basename( $filename );
 
-					$this->installed_plugins[ ] = $data;
-				}
 			}
 		}
 
