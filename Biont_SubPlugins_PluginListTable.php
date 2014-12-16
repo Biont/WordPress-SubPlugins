@@ -1,6 +1,5 @@
 <?php
 
-namespace Inpsyde\SubPlugins;
 /**
  * Check that 'class-wp-list-table.php' is available
  */
@@ -8,7 +7,7 @@ if (!class_exists('\\WP_List_Table')) {
     require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
 }
 
-class PluginListTable extends \WP_List_Table
+class Biont_SubPlugins_PluginListTable extends WP_List_Table
 {
 
 

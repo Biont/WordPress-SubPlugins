@@ -1,20 +1,10 @@
 <?php # -*- coding: utf-8 -*-
-/**
- * Created by PhpStorm.
- * User: Arbeit
- * Date: 15.08.2014
- * Time: 11:27
- */
-namespace Inpsyde\SubPlugins\Models;
-
-use Inpsyde\SubPlugins\Views as Views;
 
 /**
  * Class PluginsModel
  *
- * @package Inpsyde\SubPlugins\Models
  */
-class PluginsModel {
+class Biont_SubPlugins_PluginsModel {
 
 	/**
 	 * @var string
@@ -220,7 +210,7 @@ class PluginsModel {
 		do_action( $this->prefix . '_plugin_activation' );
 
 		// Add the actual plugin page
-		$view = new Views\PluginsView( $installed_plugins, $active_plugins );
+		$view = new Biont_SubPlugins_PluginsView( $installed_plugins, $active_plugins );
 		$view->show();
 	}
 

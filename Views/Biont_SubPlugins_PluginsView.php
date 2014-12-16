@@ -6,11 +6,8 @@
  * Time: 11:29
  */
 
-namespace Inpsyde\SubPlugins\Views;
 
-use Inpsyde\SubPlugins\PluginListTable;
-
-class PluginsView
+class Biont_SubPlugins_PluginsView
 {
 
     private $installed_plugins = array();
@@ -33,10 +30,10 @@ class PluginsView
 
             <h2><?php echo esc_html(get_admin_page_title()); ?></h2>
 
-            <form id="movies-filter" method="get">
+            <form id="sub_plugins" method="get">
                 <input type="hidden" name="page" value="<?php echo $_REQUEST['page'] ?>"/>
                 <?php
-                $table = new PluginListTable($this->installed_plugins, $this->active_plugins);
+                $table = new Biont_SubPlugins_PluginListTable($this->installed_plugins, $this->active_plugins);
                 $table->prepare_items();
                 $table->display();
                 ?>
