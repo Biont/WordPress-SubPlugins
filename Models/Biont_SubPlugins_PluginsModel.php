@@ -170,8 +170,8 @@ class Biont_SubPlugins_PluginsModel {
 			if ( $_GET[ 'action' ] == 'activate' ) {
 
 				if ( ! in_array( $_GET[ 'plugin' ], $this->active_plugins ) ) {
-					$active_plugins[ ] = $_GET[ 'plugin' ];
-					update_option( $this->prefix . '_active_plugins', $active_plugins );
+					$this->active_plugins[ ] = $_GET[ 'plugin' ];
+					update_option( $this->prefix . '_active_plugins', $this->active_plugins );
 					do_action( 'activate_' . plugin_basename( $filename ) );
 
 					// Load the plugin manually.
