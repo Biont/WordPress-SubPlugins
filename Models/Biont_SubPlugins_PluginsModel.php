@@ -27,6 +27,18 @@ class Biont_SubPlugins_PluginsModel {
 	private $active_plugins = array();
 
 	/**
+	 * @var string
+	 */
+	private $menu_location;
+
+	/**
+	 * Store all instances of this Model so that it can be accessed later on
+	 *
+	 * @var array
+	 */
+	static $instances = array();
+
+	/**
 	 * Parse the arguments and set the class variables
 	 *
 	 * @param       $plugin_folder
@@ -40,30 +52,28 @@ class Biont_SubPlugins_PluginsModel {
 			'page_title'    => __( 'Sub-Plugins' ),
 			'menu_title'    => __( 'Plugins' ),
 		);
-		$args = wp_parse_args( $args, $defaults );
+		$args     = wp_parse_args( $args, $defaults );
 
-		$this->prefix = $prefix;
+		$this->prefix        = $prefix;
 		$this->plugin_folder = $plugin_folder;
 		$this->menu_location = $args[ 'menu_location' ];
-		$this->page_title = $args[ 'page_title' ];
-		$this->menu_title = $args[ 'menu_title' ];
+		$this->page_title    = $args[ 'page_title' ];
+		$this->menu_title    = $args[ 'menu_title' ];
 
-		//add_action('current_screen','var_dump');
-		//global $pagenow;
-		//echo '<p>'.$pagenow.'</p>';
-
+		self::$instances[ $prefix ] = $this;
 	}
 
 	/**
 	 * Add hooks for adding settings and menus and then load the active plugins
 	 */
 	public function register() {
+
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu_pages' ), 0 );
 
 		$this->active_plugins = get_option( $this->prefix . '_active_plugins', array() );
 
-		if(isset($_GET[$this->prefix.'_plugins_changed'])){
+		if ( isset( $_GET[ $this->prefix . '_plugins_changed' ] ) ) {
 			$this->change_plugin_status();
 		}
 		$this->load_plugins();
@@ -74,7 +84,8 @@ class Biont_SubPlugins_PluginsModel {
 	 * Register a setting where our active plugins are stored
 	 */
 	public function register_settings() {
-		register_setting($this->prefix . '-plugins', $this->prefix . '_active_plugins');
+
+		register_setting( $this->prefix . '-plugins', $this->prefix . '_active_plugins' );
 	}
 
 	/**
@@ -90,6 +101,7 @@ class Biont_SubPlugins_PluginsModel {
 			$this->prefix . '_plugins',
 			array( $this, 'display_plugin_page' )
 		);
+		$this->menu_location = $this->menu_location.'?page='.$this->prefix . '_plugins';
 
 	}
 
@@ -106,34 +118,33 @@ class Biont_SubPlugins_PluginsModel {
 				if ( file_exists( $filename = $plugin_folder . '/' . basename( $plugin_folder ) . '.php' ) ) {
 					$data = get_file_data(
 						$filename, array(
-							'Name'        => strtoupper( $this->prefix ) . '-Plugin Name',
-							'PluginURI'   => 'Plugin URI',
-							'Description' => 'Description',
-							'Author'      => 'Author',
-							'AuthorURI'   => 'Author URI',
-							'Version'     => 'Version',
-							'Template'    => 'Template',
-							'Status'      => 'Status',
-							'Tags'        => 'Tags',
-							'TextDomain'  => 'Text Domain',
-							'DomainPath'  => 'Domain Path',
-						)
+							         'Name'        => strtoupper( $this->prefix ) . '-Plugin Name',
+							         'PluginURI'   => 'Plugin URI',
+							         'Description' => 'Description',
+							         'Author'      => 'Author',
+							         'AuthorURI'   => 'Author URI',
+							         'Version'     => 'Version',
+							         'Template'    => 'Template',
+							         'Status'      => 'Status',
+							         'Tags'        => 'Tags',
+							         'TextDomain'  => 'Text Domain',
+							         'DomainPath'  => 'Domain Path',
+						         )
 					);
 
 					if ( ! empty( $data[ 'Name' ] ) ) {
 						$data[ 'File' ] = basename( $filename );
 
-						if (in_array($data['File'], $this->active_plugins)) {
-							$data['Active'] = TRUE;
+						if ( in_array( $data[ 'File' ], $this->active_plugins ) ) {
+							$data[ 'Active' ] = TRUE;
 						} else {
-							$data['Active'] = FALSE;
+							$data[ 'Active' ] = FALSE;
 						}
 
 						$this->installed_plugins[ ] = $data;
 					}
 
 				}
-
 
 			}
 		}
@@ -146,12 +157,12 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	public function load_plugins() {
 
-			foreach ( $this->active_plugins as $plugin ) {
-				$filename = $this->plugin_folder . '/' . basename(
-						$plugin, '.php'
-					) . '/' . $plugin;
-				include_once( $filename );
-			}
+		foreach ( $this->active_plugins as $plugin ) {
+			$filename = $this->plugin_folder . '/' . basename(
+					$plugin, '.php'
+				) . '/' . $plugin;
+			include_once( $filename );
+		}
 	}
 
 	/**
@@ -198,18 +209,33 @@ class Biont_SubPlugins_PluginsModel {
 	/**
 	 * Render the settings page for this plugin.
 	 *
-	 * First  handle plugin de/activation and then spawn the view
+	 * First handle plugin de/activation and then spawn the view
 	 *
 	 * @since    1.0.0
 	 */
 	public function display_plugin_page() {
+
 		$installed_plugins = $this->get_installed_plugins();
 
 		do_action( $this->prefix . '_plugin_activation' );
 
 		// Add the actual plugin page
-		$view = new Biont_SubPlugins_PluginsView( $installed_plugins, $this->active_plugins , $this->prefix);
+		$view = new Biont_SubPlugins_PluginsView( $installed_plugins, $this->active_plugins, $this->prefix );
 		$view->show();
+	}
+
+	public function get_menu_location() {
+
+		return admin_url( $this->menu_location );
+	}
+
+	public static function get_instance( $prefix ) {
+
+		if ( isset( self::$instances[ $prefix ] ) ) {
+			return self::$instances[ $prefix ];
+		}
+
+		return NULL;
 	}
 
 }
