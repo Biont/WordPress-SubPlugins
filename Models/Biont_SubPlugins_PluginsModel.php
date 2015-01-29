@@ -71,6 +71,9 @@ class Biont_SubPlugins_PluginsModel {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'register_menu_pages' ), 0 );
 
+		add_action( $this->prefix . '_bulk_activate', array( $this, 'bulk_activate' ) );
+		add_action( $this->prefix . '_bulk_deactivate', array( $this, 'bulk_deactivate' ) );
+
 		$this->active_plugins = get_option( $this->prefix . '_active_plugins', array() );
 
 		if ( isset( $_GET[ $this->prefix . '_plugins_changed' ] ) ) {
@@ -101,7 +104,7 @@ class Biont_SubPlugins_PluginsModel {
 			$this->prefix . '_plugins',
 			array( $this, 'display_plugin_page' )
 		);
-		$this->menu_location = $this->menu_location.'?page='.$this->prefix . '_plugins';
+		$this->menu_location = $this->menu_location . '?page=' . $this->prefix . '_plugins';
 
 	}
 
@@ -174,35 +177,70 @@ class Biont_SubPlugins_PluginsModel {
 
 		//Handle Plugin actions:
 		if ( isset( $_GET[ 'action' ] ) ) {
-			$filename = $this->plugin_folder . '/' . basename(
-					$_GET[ 'plugin' ], '.php'
-				) . '/' . $_GET[ 'plugin' ];
 
 			if ( $_GET[ 'action' ] == 'activate' ) {
 
-				if ( ! in_array( $_GET[ 'plugin' ], $this->active_plugins ) ) {
-					$this->active_plugins[ ] = $_GET[ 'plugin' ];
-					update_option( $this->prefix . '_active_plugins', $this->active_plugins );
-					do_action( 'activate_' . plugin_basename( $filename ) );
-
-					// Load the plugin manually.
-					// It might be a better idea to force a refresh
-					// with JS once the page has fully loaded,
-					// so that the plugin can start as early as possible
-					include_once( $filename );
-
-				}
+				$this->activate_plugin( $_GET[ 'plugin' ] );
 
 			}
 
 			if ( $_GET[ 'action' ] == 'deactivate' ) {
 
-				if ( FALSE !== $key = array_search( $_GET[ 'plugin' ], $this->active_plugins ) ) {
-					unset( $this->active_plugins[ $key ] );
-					update_option( $this->prefix . '_active_plugins', $this->active_plugins );
-					do_action( 'deactivate_' . plugin_basename( $filename ) );
-				}
+				$this->deactivate_plugin( $_GET[ 'plugin' ] );
+
 			}
+		}
+	}
+
+	public function activate_plugin( $plugin ) {
+
+		if ( ! in_array( $_GET[ 'plugin' ], $this->active_plugins ) ) {
+
+			$filename = $this->plugin_folder . '/' . basename(
+					$plugin, '.php'
+				) . '/' . $plugin;
+
+			$this->active_plugins[ ] = $plugin;
+			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
+			do_action( 'activate_' . plugin_basename( $filename ) );
+
+			// Load the plugin manually.
+			// It might be a better idea to force a refresh
+			// with JS once the page has fully loaded,
+			// so that the plugin can start as early as possible
+			include_once( $filename );
+		}
+	}
+
+	public function bulk_activate( $plugins ) {
+
+		if ( ! empty( $plugins ) ) {
+			foreach ( $plugins as $plugin ) {
+				$this->activate_plugin( $plugin );
+			}
+		}
+	}
+
+	public function bulk_deactivate( $plugins ) {
+
+		if ( ! empty( $plugins ) ) {
+			foreach ( $plugins as $plugin ) {
+				$this->deactivate_plugin( $plugin );
+			}
+		}
+	}
+
+	public function deactivate_plugin( $plugin ) {
+
+		if ( FALSE !== $key = array_search( $plugin, $this->active_plugins ) ) {
+
+			$filename = $this->plugin_folder . '/' . basename(
+					$plugin, '.php'
+				) . '/' . $plugin;
+
+			unset( $this->active_plugins[ $key ] );
+			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
+			do_action( 'deactivate_' . plugin_basename( $filename ) );
 		}
 	}
 
