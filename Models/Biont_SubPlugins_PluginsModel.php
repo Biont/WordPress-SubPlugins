@@ -164,6 +164,24 @@ class Biont_SubPlugins_PluginsModel {
 			$filename = $this->plugin_folder . '/' . basename(
 					$plugin, '.php'
 				) . '/' . $plugin;
+
+			/**
+			 * Try to load language files for this plugin
+			 */
+			$data     = get_file_data( $filename, array(
+				'TextDomain' => 'Text Domain',
+				'DomainPath' => 'Domain Path',
+			) );
+
+			if ( isset( $data[ 'TextDomain' ], $data[ 'DomainPath' ] ) ) {
+				$domain = $data[ 'TextDomain' ];
+				$path = dirname($filename).$data['DomainPath'];
+				$locale = get_locale();
+
+				$mofile = $domain . '-' . $locale . '.mo';
+				load_textdomain( $domain, $path . '/'. $mofile );
+			}
+
 			include_once( $filename );
 		}
 	}
