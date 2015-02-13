@@ -61,6 +61,7 @@ class Biont_SubPlugins_PluginsModel {
 		$this->menu_title    = $args[ 'menu_title' ];
 
 		self::$instances[ $prefix ] = $this;
+
 	}
 
 	/**
@@ -68,19 +69,59 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	public function register() {
 
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
-		add_action( 'admin_menu', array( $this, 'register_menu_pages' ), 0 );
-
-		add_action( $this->prefix . '_bulk_activate', array( $this, 'bulk_activate' ) );
-		add_action( $this->prefix . '_bulk_deactivate', array( $this, 'bulk_deactivate' ) );
-
 		$this->active_plugins = get_option( $this->prefix . '_active_plugins', array() );
 
-		if ( isset( $_GET[ $this->prefix . '_plugins_changed' ] ) ) {
-			$this->change_plugin_status();
+		if ( is_admin() ) {
+
+			add_action( 'admin_init', array( $this, 'register_settings' ) );
+			add_action( 'admin_menu', array( $this, 'register_menu_pages' ), 0 );
+
+			add_action( $this->prefix . '_bulk_activate', array( $this, 'bulk_activate' ) );
+			add_action( $this->prefix . '_bulk_deactivate', array( $this, 'bulk_deactivate' ) );
+
+			if ( isset( $_GET[ $this->prefix . '_plugins_changed' ] ) ) {
+				$this->change_plugin_status();
+			}
+
+			/**
+			 * Handle bulk actions.
+			 * Since we need to do a redirect to get rid of request parameters,
+			 * we cannot do that directly within the ListTable. Output has already started there
+			 */
+			if ( isset( $_GET[ 'page' ] ) && $_GET[ 'page' ] === $this->prefix . '_plugins' ) {
+
+				switch ( $this->current_action() ) {
+					case'delete':
+						break;
+					case 'activate':
+						$this->bulk_activate( $_GET[ 'plugin' ] );
+						break;
+					case 'deactivate':
+						$this->bulk_deactivate( $_GET[ 'plugin' ] );
+						break;
+				}
+			}
 		}
+
 		$this->load_plugins();
 
+	}
+
+	private function current_action() {
+
+		if ( isset( $_REQUEST[ 'filter_action' ] ) && ! empty( $_REQUEST[ 'filter_action' ] ) ) {
+			return FALSE;
+		}
+
+		if ( isset( $_REQUEST[ 'action' ] ) && - 1 != $_REQUEST[ 'action' ] ) {
+			return $_REQUEST[ 'action' ];
+		}
+
+		if ( isset( $_REQUEST[ 'action2' ] ) && - 1 != $_REQUEST[ 'action2' ] ) {
+			return $_REQUEST[ 'action2' ];
+		}
+
+		return FALSE;
 	}
 
 	/**
@@ -104,8 +145,6 @@ class Biont_SubPlugins_PluginsModel {
 			$this->prefix . '_plugins',
 			array( $this, 'display_plugin_page' )
 		);
-		$this->menu_location = $this->menu_location . '?page=' . $this->prefix . '_plugins';
-
 	}
 
 	/**
@@ -240,6 +279,7 @@ class Biont_SubPlugins_PluginsModel {
 				$this->activate_plugin( $plugin );
 			}
 		}
+		wp_redirect( $this->get_menu_location() );
 	}
 
 	public function bulk_deactivate( $plugins ) {
@@ -252,6 +292,8 @@ class Biont_SubPlugins_PluginsModel {
 				$this->deactivate_plugin( $plugin );
 			}
 		}
+		wp_redirect( $this->get_menu_location() );
+
 	}
 
 	public function deactivate_plugin( $plugin ) {
@@ -288,7 +330,7 @@ class Biont_SubPlugins_PluginsModel {
 
 	public function get_menu_location() {
 
-		return admin_url( $this->menu_location );
+		return admin_url( $this->menu_location . '?page=' . $this->prefix . '_plugins' );
 	}
 
 	public static function get_instance( $prefix ) {

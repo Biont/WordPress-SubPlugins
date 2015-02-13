@@ -247,30 +247,6 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		return $actions;
 	}
 
-	/** ************************************************************************
-	 * Optional. You can handle your bulk actions anywhere or anyhow you prefer.
-	 * For this example package, we will handle it in the class to keep things
-	 * clean and organized.
-	 *
-	 * @see $this->prepare_items()
-	 **************************************************************************/
-	function process_bulk_action() {
-
-		switch ( $this->current_action() ) {
-			case'delete':
-				do_action($this->prefix.'_bulk_delete',$_GET['plugin']);
-				break;
-			case 'activate':
-
-				do_action($this->prefix.'_bulk_activate',$_GET['plugin']);
-
-				break;
-			case 'deactivate':
-				do_action($this->prefix.'_bulk_deactivate',$_GET['plugin']);
-				break;
-		}
-
-	}
 
 	/** ************************************************************************
 	 * REQUIRED! This is where you prepare your data for display. This method will
@@ -313,11 +289,6 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		 */
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 
-		/**
-		 * Optional. You can handle your bulk actions however you see fit. In this
-		 * case, we'll handle them within our package just to keep things clean.
-		 */
-		$this->process_bulk_action();
 
 		$data = $this->installed;
 
