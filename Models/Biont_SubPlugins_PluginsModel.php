@@ -168,18 +168,18 @@ class Biont_SubPlugins_PluginsModel {
 			/**
 			 * Try to load language files for this plugin
 			 */
-			$data     = get_file_data( $filename, array(
+			$data = get_file_data( $filename, array(
 				'TextDomain' => 'Text Domain',
 				'DomainPath' => 'Domain Path',
 			) );
 
 			if ( isset( $data[ 'TextDomain' ], $data[ 'DomainPath' ] ) ) {
 				$domain = $data[ 'TextDomain' ];
-				$path = dirname($filename).$data['DomainPath'];
+				$path   = dirname( $filename ) . $data[ 'DomainPath' ];
 				$locale = get_locale();
 
 				$mofile = $domain . '-' . $locale . '.mo';
-				load_textdomain( $domain, $path . '/'. $mofile );
+				load_textdomain( $domain, $path . '/' . $mofile );
 			}
 
 			include_once( $filename );
@@ -233,6 +233,9 @@ class Biont_SubPlugins_PluginsModel {
 	public function bulk_activate( $plugins ) {
 
 		if ( ! empty( $plugins ) ) {
+			if ( is_string( $plugins ) ) {
+				$plugins = array( $plugins );
+			}
 			foreach ( $plugins as $plugin ) {
 				$this->activate_plugin( $plugin );
 			}
@@ -242,6 +245,9 @@ class Biont_SubPlugins_PluginsModel {
 	public function bulk_deactivate( $plugins ) {
 
 		if ( ! empty( $plugins ) ) {
+			if ( is_string( $plugins ) ) {
+				$plugins = array( $plugins );
+			}
 			foreach ( $plugins as $plugin ) {
 				$this->deactivate_plugin( $plugin );
 			}
