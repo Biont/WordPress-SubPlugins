@@ -9,9 +9,12 @@ if ( ! class_exists( '\\WP_List_Table' ) ) {
 
 class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 
+	protected $installed = array();
+
 	function __construct( $installed, $prefix ) {
 
 		$this->installed = $installed;
+
 		$this->prefix    = $prefix;
 
 		//Set parent defaults
@@ -247,7 +250,6 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		return $actions;
 	}
 
-
 	/** ************************************************************************
 	 * REQUIRED! This is where you prepare your data for display. This method will
 	 * usually be used to query the database, sort and filter the data, and generally
@@ -289,17 +291,14 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		 */
 		$this->_column_headers = array( $columns, $hidden, $sortable );
 
-
-		$data = $this->installed;
-
 		/**
 		 * REQUIRED for pagination. Let's figure out what page the user is currently
 		 * looking at. We'll need this later, so you should always include it in
 		 * your own package classes.
 		 */
 		$current_page = $this->get_pagenum();
-		$total_items  = count( $data );
-		$data         = array_slice( $data, ( ( $current_page - 1 ) * $per_page ), $per_page );
+		$total_items  = count( $this->installed );
+		$data         = array_slice( $this->installed, ( ( $current_page - 1 ) * $per_page ), $per_page );
 
 		/**
 		 * REQUIRED. Now we can add our *sorted* data to the items property, where
