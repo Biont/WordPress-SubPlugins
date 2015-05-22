@@ -7,10 +7,11 @@ You can use it to make your plugins more modular and allow users to turn feature
 ## Example implementation
 
     //   wp-content/plugins/my-plugin/my-plugin.php      - WordPress Plugin file
+    //   wp-content/plugins/my-plugin/lib/sub-plugins    - SubPlugin library
     //   wp-content/plugins/my-plugin/plugins            - Subplugin folder
     
 
-    include_once( $this->root_dir . '/lib/sub-plugins/sub-plugins.php' );
+    include_once( plugin_dir_path( __FILE__ ) . 'lib/sub-plugins/sub-plugins.php' );
     
     $sub_plugin_folder = plugin_dir_path( __FILE__ ) . 'plugins';
     
