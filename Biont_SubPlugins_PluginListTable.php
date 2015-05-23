@@ -15,7 +15,7 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 
 		$this->installed = $installed;
 
-		$this->prefix    = $prefix;
+		$this->prefix = $prefix;
 
 		//Set parent defaults
 		parent::__construct( array(
