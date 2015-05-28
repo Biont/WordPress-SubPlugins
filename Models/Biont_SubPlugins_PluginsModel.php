@@ -102,7 +102,6 @@ class Biont_SubPlugins_PluginsModel {
 				}
 			}
 		}
-
 		$this->load_plugins();
 
 	}
@@ -195,9 +194,21 @@ class Biont_SubPlugins_PluginsModel {
 	}
 
 	/**
+	 * Returns all active plugins
+	 *
+	 * @return array
+	 */
+	public function get_active_plugins() {
+
+		return $this->active_plugins;
+	}
+
+	/**
 	 * Find all active plugins and load them
 	 */
 	public function load_plugins() {
+
+		do_action( 'biont_pre_load_subplugins', $this );
 
 		foreach ( $this->active_plugins as $plugin ) {
 			$filename = $this->plugin_folder . '/' . basename(
