@@ -31,6 +31,8 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	private $menu_location;
 
+	private $waiting_for_activation = array();
+
 	/**
 	 * Store all instances of this Model so that it can be accessed later on
 	 *
@@ -103,7 +105,26 @@ class Biont_SubPlugins_PluginsModel {
 			}
 		}
 		$this->load_plugins();
+		$this->handle_activation_queue();
 
+	}
+
+	/**
+	 * If plugins were activated, call their activation hooks
+	 */
+	private function handle_activation_queue() {
+
+		if ( ! empty( $this->waiting_for_activation ) ) {
+			foreach ( $this->waiting_for_activation as $plugin ) {
+				$filename = $this->plugin_folder . '/' . basename(
+						$plugin, '.php'
+					) . '/' . $plugin;
+				error_log( 'activation hook:' . plugin_basename( $filename ) );
+				do_action( 'activate_' . plugin_basename( $filename ) );
+
+			}
+
+		}
 	}
 
 	private function current_action() {
@@ -157,21 +178,7 @@ class Biont_SubPlugins_PluginsModel {
 		if ( $this->installed_plugins == NULL ) {
 			foreach ( glob( $this->plugin_folder . '/*', GLOB_ONLYDIR ) as $plugin_folder ) {
 				if ( file_exists( $filename = $plugin_folder . '/' . basename( $plugin_folder ) . '.php' ) ) {
-					$data = get_file_data(
-						$filename, array(
-							         'Name'        => strtoupper( $this->prefix ) . '-Plugin Name',
-							         'PluginURI'   => 'Plugin URI',
-							         'Description' => 'Description',
-							         'Author'      => 'Author',
-							         'AuthorURI'   => 'Author URI',
-							         'Version'     => 'Version',
-							         'Template'    => 'Template',
-							         'Status'      => 'Status',
-							         'Tags'        => 'Tags',
-							         'TextDomain'  => 'Text Domain',
-							         'DomainPath'  => 'Domain Path',
-						         )
-					);
+					$data = biont_get_plugin_data( $this->prefix, $filename );
 
 					if ( ! empty( $data[ 'Name' ] ) ) {
 						$data[ 'File' ] = basename( $filename );
@@ -260,23 +267,19 @@ class Biont_SubPlugins_PluginsModel {
 		}
 	}
 
+	/**
+	 * Adds a plugin to the active plugins array and to the activation queue
+	 *
+	 * @param $plugin
+	 */
 	public function activate_plugin( $plugin ) {
 
 		if ( ! in_array( $_GET[ 'plugin' ], $this->active_plugins ) ) {
 
-			$filename = $this->plugin_folder . '/' . basename(
-					$plugin, '.php'
-				) . '/' . $plugin;
-
-			$this->active_plugins[ ] = $plugin;
+			$this->active_plugins[ ]         = $plugin;
+			$this->waiting_for_activation[ ] = $plugin;
 			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
-			do_action( 'activate_' . plugin_basename( $filename ) );
 
-			// Load the plugin manually.
-			// It might be a better idea to force a refresh
-			// with JS once the page has fully loaded,
-			// so that the plugin can start as early as possible
-			include_once( $filename );
 		}
 	}
 

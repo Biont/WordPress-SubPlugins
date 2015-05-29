@@ -32,3 +32,45 @@ if ( ! function_exists( 'biont_get_subplugin_model' ) ) {
 
 	}
 }
+
+if ( ! function_exists( 'biont_get_plugin_data' ) ) {
+
+	function biont_get_plugin_data( $prefix, $plugin_file, $markup = TRUE, $translate = TRUE ) {
+
+		$default_headers = array(
+			'Name'        => strtoupper( $prefix ) . '-Plugin Name',
+			'PluginURI'   => 'Plugin URI',
+			'Version'     => 'Version',
+			'Description' => 'Description',
+			'Author'      => 'Author',
+			'AuthorURI'   => 'Author URI',
+			'TextDomain'  => 'Text Domain',
+			'DomainPath'  => 'Domain Path',
+			'Network'     => 'Network',
+			// Site Wide Only is deprecated in favor of Network.
+			'_sitewide'   => 'Site Wide Only',
+		);
+
+		$plugin_data = get_file_data( $plugin_file, $default_headers, 'plugin' );
+
+		// Site Wide Only is the old header for Network
+		if ( ! $plugin_data[ 'Network' ] && $plugin_data[ '_sitewide' ] ) {
+			_deprecated_argument( __FUNCTION__, '3.0',
+			                      sprintf( __( 'The <code>%1$s</code> plugin header is deprecated. Use <code>%2$s</code> instead.' ),
+			                               'Site Wide Only: true', 'Network: true' ) );
+			$plugin_data[ 'Network' ] = $plugin_data[ '_sitewide' ];
+		}
+		$plugin_data[ 'Network' ] = ( 'true' == strtolower( $plugin_data[ 'Network' ] ) );
+		unset( $plugin_data[ '_sitewide' ] );
+
+		if ( $markup || $translate ) {
+			$plugin_data = _get_plugin_data_markup_translate( $plugin_file, $plugin_data, $markup, $translate );
+		} else {
+			$plugin_data[ 'Title' ]      = $plugin_data[ 'Name' ];
+			$plugin_data[ 'AuthorName' ] = $plugin_data[ 'Author' ];
+		}
+
+		return $plugin_data;
+
+	}
+}
