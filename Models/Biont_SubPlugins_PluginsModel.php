@@ -119,7 +119,6 @@ class Biont_SubPlugins_PluginsModel {
 				$filename = $this->plugin_folder . '/' . basename(
 						$plugin, '.php'
 					) . '/' . $plugin;
-				error_log( 'activation hook:' . plugin_basename( $filename ) );
 				do_action( 'activate_' . plugin_basename( $filename ) );
 
 			}
