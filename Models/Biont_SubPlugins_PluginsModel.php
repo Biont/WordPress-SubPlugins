@@ -306,7 +306,7 @@ class Biont_SubPlugins_PluginsModel {
 			}
 		}
 		wp_redirect( $this->get_menu_location() );
-
+		exit;
 	}
 
 	public function deactivate_plugin( $plugin ) {

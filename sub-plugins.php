@@ -14,7 +14,11 @@ if ( ! function_exists( 'add_subplugin_support' ) ) {
 		}
 
 		$plugins = new Biont_SubPlugins_PluginsModel( $plugin_folder, $prefix, $args );
-		$plugins->register();
+		if ( did_action( 'plugins_loaded' ) ) {
+			$plugins->register();
+		} else {
+			add_action( 'plugins_loaded', array( $plugins, 'register' ) );
+		}
 
 	}
 }
