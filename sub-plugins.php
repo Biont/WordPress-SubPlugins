@@ -41,6 +41,10 @@ if ( ! function_exists( 'biont_get_plugin_data' ) ) {
 
 	function biont_get_plugin_data( $prefix, $plugin_file, $markup = TRUE, $translate = TRUE ) {
 
+		if ( ! function_exists( '_get_plugin_data_markup_translate' ) ) {
+			include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+		}
+
 		$default_headers = array(
 			'Name'        => strtoupper( $prefix ) . '-Plugin Name',
 			'PluginURI'   => 'Plugin URI',
