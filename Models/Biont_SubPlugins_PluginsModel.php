@@ -7,30 +7,45 @@
 class Biont_SubPlugins_PluginsModel {
 
 	/**
+	 * path to the plugins folder
+	 *
 	 * @var string
 	 */
 	private $plugin_folder = '';
 
 	/**
+	 * Prefix for this instance to use
+	 *
 	 * @var string
 	 */
 	private $prefix = '';
 
 	/**
+	 * All plugin files currently in the plugins folder
+	 *
 	 * @var array
 	 */
 	private $installed_plugins = array();
 
 	/**
+	 * All currently active plugins
+	 *
 	 * @var array
 	 */
 	private $active_plugins = array();
 
 	/**
+	 * URL segment of the plugin page menu
+	 *
 	 * @var string
 	 */
 	private $menu_location;
 
+	/**
+	 * Temporary storage to defer plugin activation
+	 *
+	 * @var array
+	 */
 	private $waiting_for_activation = array();
 
 	/**
@@ -90,7 +105,10 @@ class Biont_SubPlugins_PluginsModel {
 			 * Since we need to do a redirect to get rid of request parameters,
 			 * we cannot do that directly within the ListTable. Output has already started there
 			 */
-			if ( isset( $_GET[ 'page' ] ) && $_GET[ 'page' ] === $this->prefix . '_plugins' ) {
+			if ( isset( $_GET[ 'page' ] )
+			     && isset( $_GET[ 'plugin' ] )
+			     && $_GET[ 'page' ] === $this->prefix . '_plugins'
+			) {
 
 				switch ( $this->current_action() ) {
 					case'delete':
@@ -126,6 +144,11 @@ class Biont_SubPlugins_PluginsModel {
 		}
 	}
 
+	/**
+	 * Find out what plugin action we're currently doing
+	 *
+	 * @return bool
+	 */
 	private function current_action() {
 
 		if ( isset( $_REQUEST[ 'filter_action' ] ) && ! empty( $_REQUEST[ 'filter_action' ] ) ) {
@@ -273,7 +296,7 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	public function activate_plugin( $plugin ) {
 
-		if ( ! in_array( $_GET[ 'plugin' ], $this->active_plugins ) ) {
+		if ( ! in_array( $plugin, $this->active_plugins ) ) {
 
 			$this->active_plugins[ ]         = $plugin;
 			$this->waiting_for_activation[ ] = $plugin;
@@ -282,6 +305,11 @@ class Biont_SubPlugins_PluginsModel {
 		}
 	}
 
+	/**
+	 * Activate a bunch of plugins in bulk
+	 *
+	 * @param $plugins
+	 */
 	public function bulk_activate( $plugins ) {
 
 		if ( ! empty( $plugins ) ) {
@@ -295,6 +323,11 @@ class Biont_SubPlugins_PluginsModel {
 		wp_redirect( $this->get_menu_location() );
 	}
 
+	/**
+	 * Deactivate a bunch of plugins in bulk
+	 *
+	 * @param $plugins
+	 */
 	public function bulk_deactivate( $plugins ) {
 
 		if ( ! empty( $plugins ) ) {
@@ -309,6 +342,11 @@ class Biont_SubPlugins_PluginsModel {
 		exit;
 	}
 
+	/**
+	 * Deactivate a single plugin
+	 *
+	 * @param $plugin
+	 */
 	public function deactivate_plugin( $plugin ) {
 
 		if ( FALSE !== $key = array_search( $plugin, $this->active_plugins ) ) {
@@ -341,11 +379,23 @@ class Biont_SubPlugins_PluginsModel {
 		$view->show();
 	}
 
+	/**
+	 * Returns the location of the menu entry
+	 *
+	 * @return string|void
+	 */
 	public function get_menu_location() {
 
 		return admin_url( $this->menu_location . '?page=' . $this->prefix . '_plugins' );
 	}
 
+	/**
+	 * Returns the SubPlugin instance with the given prefix
+	 *
+	 * @param $prefix
+	 *
+	 * @return null
+	 */
 	public static function get_instance( $prefix ) {
 
 		if ( isset( self::$instances[ $prefix ] ) ) {
