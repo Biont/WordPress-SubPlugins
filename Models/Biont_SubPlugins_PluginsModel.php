@@ -134,14 +134,20 @@ class Biont_SubPlugins_PluginsModel {
 
 		if ( ! empty( $this->waiting_for_activation ) ) {
 			foreach ( $this->waiting_for_activation as $plugin ) {
-				$filename = $this->plugin_folder . '/' . basename(
-						$plugin, '.php'
-					) . '/' . $plugin;
-				do_action( 'activate_' . plugin_basename( $filename ) );
+				$filename = $this->get_plugin_file_path( $plugin );
+				if ( file_exists( $filename ) ) {
+					do_action( 'activate_' . plugin_basename( $filename ) );
+				}
 
 			}
 
 		}
+	}
+
+	private function get_plugin_file_path( $plugin ) {
+
+		return $this->plugin_folder . '/' . basename( $plugin, '.php' ) . '/' . $plugin;
+
 	}
 
 	/**
@@ -240,9 +246,16 @@ class Biont_SubPlugins_PluginsModel {
 		do_action( 'biont_pre_load_subplugins', $this );
 
 		foreach ( $this->active_plugins as $plugin ) {
-			$filename = $this->plugin_folder . '/' . basename(
-					$plugin, '.php'
-				) . '/' . $plugin;
+
+			if ( empty( $plugin ) ) {
+				continue;
+			}
+
+			$filename = $this->get_plugin_file_path( $plugin );
+
+			if ( ! file_exists( $filename ) ) {
+				continue;
+			}
 
 			/**
 			 * Try to load language files for this plugin
@@ -297,6 +310,11 @@ class Biont_SubPlugins_PluginsModel {
 	public function activate_plugin( $plugin ) {
 
 		if ( ! in_array( $plugin, $this->active_plugins ) ) {
+
+			$filename = $this->get_plugin_file_path( $plugin );
+			if ( ! file_exists( $filename ) ) {
+				return;
+			}
 
 			$this->active_plugins[ ]         = $plugin;
 			$this->waiting_for_activation[ ] = $plugin;
@@ -359,6 +377,22 @@ class Biont_SubPlugins_PluginsModel {
 			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
 			do_action( 'deactivate_' . plugin_basename( $filename ) );
 		}
+	}
+
+	/**
+	 * Is a specific plugin currently active?
+	 *
+	 * @param $plugin
+	 *
+	 * @return bool
+	 */
+	public function is_plugin_active( $plugin ) {
+
+		if ( is_array( $plugin ) && isset( $plugin[ 'File' ] ) ) {
+			$plugin = $plugin[ 'File' ];
+		}
+
+		return ( in_array( $plugin, $this->active_plugins ) );
 	}
 
 	/**
