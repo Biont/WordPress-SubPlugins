@@ -199,14 +199,17 @@ class Biont_SubPlugins_PluginsModel {
 	 * Returns an array  of all plugins in the plugins folder
 	 *
 	 * @TODO: Check for existence of file_data?
-	 * @return type
+	 * @return array
 	 */
 	public function get_installed_plugins() {
 
 		if ( $this->installed_plugins == NULL ) {
 			foreach ( glob( $this->plugin_folder . '/*', GLOB_ONLYDIR ) as $plugin_folder ) {
 				if ( file_exists( $filename = $plugin_folder . '/' . basename( $plugin_folder ) . '.php' ) ) {
-					$data = biont_get_plugin_data( $this->prefix, $filename );
+
+					$markup = apply_filters( 'biont_plugin_data_markup', TRUE );
+
+					$data = biont_get_plugin_data( $this->prefix, $filename, $markup );
 
 					if ( ! empty( $data[ 'Name' ] ) ) {
 						$data[ 'File' ] = basename( $filename );
@@ -217,7 +220,7 @@ class Biont_SubPlugins_PluginsModel {
 							$data[ 'Active' ] = FALSE;
 						}
 
-						$this->installed_plugins[ ] = $data;
+						$this->installed_plugins[] = $data;
 					}
 
 				}
@@ -316,8 +319,8 @@ class Biont_SubPlugins_PluginsModel {
 				return;
 			}
 
-			$this->active_plugins[ ]         = $plugin;
-			$this->waiting_for_activation[ ] = $plugin;
+			$this->active_plugins[]         = $plugin;
+			$this->waiting_for_activation[] = $plugin;
 			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
 
 		}

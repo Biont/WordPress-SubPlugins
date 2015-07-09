@@ -19,7 +19,7 @@ if ( ! function_exists( 'add_subplugin_support' ) ) {
 		} else {
 			add_action( 'plugins_loaded', array( $plugins, 'register' ) );
 		}
-
+		return $plugins;
 	}
 }
 
