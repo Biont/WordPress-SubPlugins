@@ -19,6 +19,7 @@ if ( ! function_exists( 'add_subplugin_support' ) ) {
 		} else {
 			add_action( 'plugins_loaded', array( $plugins, 'register' ) );
 		}
+
 		return $plugins;
 	}
 }
@@ -58,6 +59,8 @@ if ( ! function_exists( 'biont_get_plugin_data' ) ) {
 			// Site Wide Only is deprecated in favor of Network.
 			'_sitewide'   => 'Site Wide Only',
 		);
+
+		$default_headers = apply_filters( 'biont_plugin_data_headers', $default_headers );
 
 		$plugin_data = get_file_data( $plugin_file, $default_headers, 'plugin' );
 

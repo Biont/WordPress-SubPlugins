@@ -219,13 +219,21 @@ class Biont_SubPlugins_PluginsModel {
 						} else {
 							$data[ 'Active' ] = FALSE;
 						}
-
 						$this->installed_plugins[] = $data;
 					}
 
 				}
 
 			}
+			/**
+			 * This filter can currently be used for custom sorting using the Plugin Headers,
+			 * or for hiding specific plugins on the UI
+			 *
+			 * *Adding* Plugins would not be functional as the library currently checks for the existence of the plugin file
+			 *
+			 * TODO: Think of ways we can extend this lib to support external plugin repositories as well
+			 */
+			$this->installed_plugins = apply_filters( 'biont_get_installed_plugins', $this->installed_plugins );
 		}
 
 		return $this->installed_plugins;
