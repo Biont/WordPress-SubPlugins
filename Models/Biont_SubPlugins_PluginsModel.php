@@ -135,7 +135,7 @@ class Biont_SubPlugins_PluginsModel {
 		if ( ! empty( $this->waiting_for_activation ) ) {
 			foreach ( $this->waiting_for_activation as $plugin ) {
 				$filename = $this->get_plugin_file_path( $plugin );
-				if ( file_exists( $filename ) ) {
+				if ( $this->plugin_exists( $filename ) ) {
 					do_action( 'activate_' . plugin_basename( $filename ) );
 				}
 
@@ -144,10 +144,22 @@ class Biont_SubPlugins_PluginsModel {
 		}
 	}
 
-	private function get_plugin_file_path( $plugin ) {
+	public function get_plugin_file_path( $plugin ) {
 
 		return $this->plugin_folder . '/' . basename( $plugin, '.php' ) . '/' . $plugin;
 
+	}
+
+	/**
+	 * Validates a plugin file path
+	 *
+	 * @param $filename
+	 *
+	 * @return bool
+	 */
+	public function plugin_exists( $filename ) {
+
+		return ( file_exists( $filename ) && ! is_dir( $filename ) );
 	}
 
 	/**
@@ -205,7 +217,8 @@ class Biont_SubPlugins_PluginsModel {
 
 		if ( $this->installed_plugins == NULL ) {
 			foreach ( glob( $this->plugin_folder . '/*', GLOB_ONLYDIR ) as $plugin_folder ) {
-				if ( file_exists( $filename = $plugin_folder . '/' . basename( $plugin_folder ) . '.php' ) ) {
+				$filename = $plugin_folder . '/' . basename( $plugin_folder ) . '.php';
+				if ( $this->plugin_exists( $filename ) ) {
 
 					$markup = apply_filters( 'biont_plugin_data_markup', TRUE );
 
@@ -264,7 +277,7 @@ class Biont_SubPlugins_PluginsModel {
 
 			$filename = $this->get_plugin_file_path( $plugin );
 
-			if ( ! file_exists( $filename ) ) {
+			if ( ! $this->plugin_exists( $filename ) ) {
 				continue;
 			}
 
@@ -323,7 +336,7 @@ class Biont_SubPlugins_PluginsModel {
 		if ( ! in_array( $plugin, $this->active_plugins ) ) {
 
 			$filename = $this->get_plugin_file_path( $plugin );
-			if ( ! file_exists( $filename ) ) {
+			if ( ! $this->plugin_exists( $filename ) ) {
 				return;
 			}
 
