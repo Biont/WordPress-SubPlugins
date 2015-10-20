@@ -61,7 +61,7 @@ if ( ! function_exists( 'biont_get_plugin_data' ) ) {
 				'_sitewide'   => 'Site Wide Only',
 			);
 
-			$default_headers = apply_filters( 'biont_plugin_data_headers', $default_headers );
+			$default_headers = apply_filters( $prefix . '_plugin_data_headers', $default_headers );
 
 			$plugin_data = get_file_data( $plugin_file, $default_headers, 'plugin' );
 
