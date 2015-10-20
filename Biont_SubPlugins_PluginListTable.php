@@ -10,12 +10,14 @@ if ( ! class_exists( '\\WP_List_Table' ) ) {
 class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 
 	protected $installed = array();
+	protected $nonce;
 
-	function __construct( $installed, $prefix ) {
+	function __construct( $installed, $prefix, $nonce ) {
 
 		$this->installed = $installed;
 
 		$this->prefix = $prefix;
+		$this->nonce  = $nonce;
 
 		//Set parent defaults
 		parent::__construct( array(
@@ -24,6 +26,25 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 			                     'ajax'     => FALSE        //does this table support ajax?
 		                     ) );
 
+	}
+
+	/**
+	 * Generate the table navigation above or below the table
+	 *
+	 * @since  3.1.0
+	 * @access protected
+	 *
+	 * @param string $which
+	 */
+	protected function display_tablenav( $which ) {
+
+		/**
+		 * Custom nonce
+		 */
+		if ( 'top' == $which ) {
+			echo '<input type="hidden" name="nonce" value="' . $this->nonce . '">';
+		}
+		parent::display_tablenav( FALSE );
 	}
 
 	/** ************************************************************************
@@ -75,30 +96,33 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		$actions = array();
 
 		if ( $item[ 'Active' ] === TRUE ) {
-			$actions[ 'deactivate' ] = sprintf( '<a href="%s&action=%s&%s=%s&%s_plugins_changed=1">%s</a>',
+			$actions[ 'deactivate' ] = sprintf( '<a href="%s&action=%s&%s=%s&%s_plugins_changed=1&nonce=%s">%s</a>',
 			                                    $screen,
 			                                    'deactivate',
 			                                    $this->_args[ 'singular' ],
 			                                    esc_attr( $item[ 'File' ] ),
 			                                    $this->prefix,
+			                                    $this->nonce,
 			                                    __( 'Deactivate' )
 			);
 		} else {
-			$actions[ 'activate' ] = sprintf( '<a href="%s&action=%s&%s=%s&%s_plugins_changed=1">%s</a>',
+			$actions[ 'activate' ] = sprintf( '<a href="%s&action=%s&%s=%s&%s_plugins_changed=1&nonce=%s">%s</a>',
 			                                  $screen,
 			                                  'activate',
 			                                  $this->_args[ 'singular' ],
 			                                  esc_attr( $item[ 'File' ] ),
 			                                  $this->prefix,
+			                                  $this->nonce,
 			                                  __( 'Activate' )
 			);
 		}
 
-		$actions[ 'delete' ] = sprintf( '<a href="%s&action=%s&%s=%s">%s</a>',
+		$actions[ 'delete' ] = sprintf( '<a href="%s&action=%s&%s=%s&nonce=%s">%s</a>',
 		                                $screen,
 		                                'delete',
 		                                $this->_args[ 'singular' ],
 		                                esc_attr( $item[ 'File' ] ),
+		                                $this->nonce,
 		                                __( 'Delete' )
 		);
 
@@ -270,7 +294,7 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		/**
 		 * First, lets decide how many records per page to show
 		 */
-		$per_page = 5;
+		$per_page = 15;
 
 		/**
 		 * REQUIRED. Now we need to define our column headers. This includes a complete

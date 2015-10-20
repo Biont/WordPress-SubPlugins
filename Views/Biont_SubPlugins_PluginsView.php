@@ -1,9 +1,6 @@
 <?php # -*- coding: utf-8 -*-
 /**
- * Created by PhpStorm.
- * User: Arbeit
- * Date: 15.08.2014
- * Time: 11:29
+ * Class Biont_SubPlugins_PluginsView
  */
 class Biont_SubPlugins_PluginsView {
 
@@ -29,11 +26,12 @@ class Biont_SubPlugins_PluginsView {
 	 * @param $active_plugins
 	 * @param $prefix
 	 */
-	public function __construct( $installed_plugins, $active_plugins, $prefix ) {
+	public function __construct( $installed_plugins, $active_plugins, $prefix, $nonce ) {
 
 		$this->installed_plugins = $installed_plugins;
 		$this->active_plugins    = $active_plugins;
 		$this->prefix            = $prefix;
+		$this->nonce             = $nonce;
 	}
 
 	/**
@@ -51,13 +49,17 @@ class Biont_SubPlugins_PluginsView {
 				<input type="hidden" name="page" value="<?php echo $_REQUEST[ 'page' ] ?>" />
 				<?php
 				do_action( 'biont_subplugin_form_fields' );
-				$table = new Biont_SubPlugins_PluginListTable( $this->installed_plugins, $this->prefix );
+				$table = new Biont_SubPlugins_PluginListTable(
+					$this->installed_plugins,
+					$this->prefix,
+					$this->nonce
+				);
 				$table->prepare_items();
 				$table->display();
 				?>
 			</form>
 			<?php do_action( 'biont_after_subplugin_list' ) ?>
 		</div>
-	<?php
+		<?php
 	}
 }

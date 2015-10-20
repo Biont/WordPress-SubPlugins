@@ -43,42 +43,46 @@ if ( ! function_exists( 'biont_get_plugin_data' ) ) {
 	function biont_get_plugin_data( $prefix, $plugin_file, $markup = TRUE, $translate = TRUE ) {
 
 		if ( ! function_exists( '_get_plugin_data_markup_translate' ) ) {
-			include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+			include( ABSPATH . 'wp-admin/includes/plugin.php' );
 		}
+		$plugin_data = wp_cache_get( $prefix . $plugin_file, $prefix . '_subplugins' );
+		if ( $plugin_data === FALSE ) {
+			$default_headers = array(
+				'Name'        => strtoupper( $prefix ) . '-Plugin Name',
+				'PluginURI'   => 'Plugin URI',
+				'Version'     => 'Version',
+				'Description' => 'Description',
+				'Author'      => 'Author',
+				'AuthorURI'   => 'Author URI',
+				'TextDomain'  => 'Text Domain',
+				'DomainPath'  => 'Domain Path',
+				'Network'     => 'Network',
+				// Site Wide Only is deprecated in favor of Network.
+				'_sitewide'   => 'Site Wide Only',
+			);
 
-		$default_headers = array(
-			'Name'        => strtoupper( $prefix ) . '-Plugin Name',
-			'PluginURI'   => 'Plugin URI',
-			'Version'     => 'Version',
-			'Description' => 'Description',
-			'Author'      => 'Author',
-			'AuthorURI'   => 'Author URI',
-			'TextDomain'  => 'Text Domain',
-			'DomainPath'  => 'Domain Path',
-			'Network'     => 'Network',
-			// Site Wide Only is deprecated in favor of Network.
-			'_sitewide'   => 'Site Wide Only',
-		);
+			$default_headers = apply_filters( 'biont_plugin_data_headers', $default_headers );
 
-		$default_headers = apply_filters( 'biont_plugin_data_headers', $default_headers );
+			$plugin_data = get_file_data( $plugin_file, $default_headers, 'plugin' );
 
-		$plugin_data = get_file_data( $plugin_file, $default_headers, 'plugin' );
+			// Site Wide Only is the old header for Network
+			if ( ! $plugin_data[ 'Network' ] && $plugin_data[ '_sitewide' ] ) {
+				_deprecated_argument( __FUNCTION__, '3.0',
+				                      sprintf( __( 'The <code>%1$s</code> plugin header is deprecated. Use <code>%2$s</code> instead.' ),
+				                               'Site Wide Only: true', 'Network: true' ) );
+				$plugin_data[ 'Network' ] = $plugin_data[ '_sitewide' ];
+			}
+			$plugin_data[ 'Network' ] = ( 'true' == strtolower( $plugin_data[ 'Network' ] ) );
+			unset( $plugin_data[ '_sitewide' ] );
 
-		// Site Wide Only is the old header for Network
-		if ( ! $plugin_data[ 'Network' ] && $plugin_data[ '_sitewide' ] ) {
-			_deprecated_argument( __FUNCTION__, '3.0',
-			                      sprintf( __( 'The <code>%1$s</code> plugin header is deprecated. Use <code>%2$s</code> instead.' ),
-			                               'Site Wide Only: true', 'Network: true' ) );
-			$plugin_data[ 'Network' ] = $plugin_data[ '_sitewide' ];
-		}
-		$plugin_data[ 'Network' ] = ( 'true' == strtolower( $plugin_data[ 'Network' ] ) );
-		unset( $plugin_data[ '_sitewide' ] );
+			if ( $markup || $translate ) {
+				$plugin_data = _get_plugin_data_markup_translate( $plugin_file, $plugin_data, $markup, $translate );
+			} else {
+				$plugin_data[ 'Title' ]      = $plugin_data[ 'Name' ];
+				$plugin_data[ 'AuthorName' ] = $plugin_data[ 'Author' ];
+			}
 
-		if ( $markup || $translate ) {
-			$plugin_data = _get_plugin_data_markup_translate( $plugin_file, $plugin_data, $markup, $translate );
-		} else {
-			$plugin_data[ 'Title' ]      = $plugin_data[ 'Name' ];
-			$plugin_data[ 'AuthorName' ] = $plugin_data[ 'Author' ];
+			wp_cache_set( $prefix . $plugin_file, $plugin_data, $prefix . '_subplugins' );
 		}
 
 		return $plugin_data;

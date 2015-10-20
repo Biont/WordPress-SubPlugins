@@ -46,7 +46,10 @@ class Biont_SubPlugins_PluginsModel {
 	 *
 	 * @var array
 	 */
-	private $waiting_for_activation = array();
+	private $queues = array(
+		'activate'   => array(),
+		'deactivate' => array()
+	);
 
 	/**
 	 * Store all instances of this Model so that it can be accessed later on
@@ -109,36 +112,75 @@ class Biont_SubPlugins_PluginsModel {
 			     && isset( $_GET[ 'plugin' ] )
 			     && $_GET[ 'page' ] === $this->prefix . '_plugins'
 			) {
-
-				switch ( $this->current_action() ) {
-					case'delete':
-						break;
-					case 'activate':
-						$this->bulk_activate( $_GET[ 'plugin' ] );
-						break;
-					case 'deactivate':
-						$this->bulk_deactivate( $_GET[ 'plugin' ] );
-						break;
+				if ( $this->verify_nonce() ) {
+					switch ( $this->current_action() ) {
+						case'delete':
+							break;
+						case 'activate':
+							$this->bulk_activate( $_GET[ 'plugin' ] );
+							break;
+						case 'deactivate':
+							$this->bulk_deactivate( $_GET[ 'plugin' ] );
+							break;
+					}
+				} else {
+					die( 'Invalid request' );
 				}
 			}
 		}
 		$this->load_plugins();
-		$this->handle_activation_queue();
+		$this->handle_queues();
 
 	}
 
 	/**
 	 * If plugins were activated, call their activation hooks
 	 */
-	private function handle_activation_queue() {
+	private function handle_queues() {
 
-		if ( ! empty( $this->waiting_for_activation ) ) {
-			foreach ( $this->waiting_for_activation as $plugin ) {
-				$filename = $this->get_plugin_file_path( $plugin );
-				if ( $this->plugin_exists( $filename ) ) {
-					do_action( 'activate_' . plugin_basename( $filename ) );
+		if ( ! empty( $this->queues ) ) {
+			foreach ( $this->queues as $type => $queue ) {
+				foreach ( $queue as $index => $plugin ) {
+					unset( $this->queues[ $type ][ $index ] );
+					$filename = $this->get_plugin_file_path( $plugin );
+					if ( $this->plugin_exists( $filename ) ) {
+						/**
+						 * When this runs, the plugin was already removed from the active plugins. So manually
+						 * load it one last time
+						 */
+						if ( $type === 'deactivate' ) {
+							include_once( $filename );
+						}
+						$plugin_data = biont_get_plugin_data( $this->prefix, $filename );
+
+						/**
+						 * Build a hook name that is compatible with register_activation_hook()
+						 * from within the main subplugin file :)
+						 */
+						$hookname = $type . '_' . plugin_basename( $filename );
+						do_action( $hookname, $plugin_data );
+
+						/**
+						 * If the plugin is deactivated right from its activation hook, don't call the following action
+						 */
+						if ( $this->is_plugin_active( $plugin ) ) {
+							/**
+							 * Build a general hookname, for example
+							 *
+							 * 'xyz_activate_plugin'
+							 */
+							$hookname = $this->prefix . '_' . $type . '_plugin';
+							do_action(
+								$hookname,
+								$plugin,
+								$plugin_data,
+								$filename,
+								$this
+							);
+						}
+
+					}
 				}
-
 			}
 
 		}
@@ -220,7 +262,7 @@ class Biont_SubPlugins_PluginsModel {
 				$filename = $plugin_folder . '/' . basename( $plugin_folder ) . '.php';
 				if ( $this->plugin_exists( $filename ) ) {
 
-					$markup = apply_filters( 'biont_plugin_data_markup', TRUE );
+					$markup = apply_filters( $this->prefix . '_plugin_data_markup', TRUE );
 
 					$data = biont_get_plugin_data( $this->prefix, $filename, $markup );
 
@@ -246,7 +288,8 @@ class Biont_SubPlugins_PluginsModel {
 			 *
 			 * TODO: Think of ways we can extend this lib to support external plugin repositories as well
 			 */
-			$this->installed_plugins = apply_filters( 'biont_get_installed_plugins', $this->installed_plugins );
+			$this->installed_plugins = apply_filters( $this->prefix . '_get_installed_plugins',
+			                                          $this->installed_plugins );
 		}
 
 		return $this->installed_plugins;
@@ -267,7 +310,7 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	public function load_plugins() {
 
-		do_action( 'biont_pre_load_subplugins', $this );
+		do_action( $this->prefix . '_pre_load_subplugins', $this );
 
 		foreach ( $this->active_plugins as $plugin ) {
 
@@ -309,6 +352,9 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	public function change_plugin_status() {
 
+		if ( ! $this->verify_nonce() ) {
+			die( 'Invalid Request' );
+		}
 		//Handle Plugin actions:
 		if ( isset( $_GET[ 'action' ] ) ) {
 
@@ -324,6 +370,8 @@ class Biont_SubPlugins_PluginsModel {
 
 			}
 		}
+		$this->load_plugins();
+		$this->redirect();
 	}
 
 	/**
@@ -331,7 +379,7 @@ class Biont_SubPlugins_PluginsModel {
 	 *
 	 * @param $plugin
 	 */
-	public function activate_plugin( $plugin ) {
+	public function activate_plugin( $plugin, $redirect = FALSE ) {
 
 		if ( ! in_array( $plugin, $this->active_plugins ) ) {
 
@@ -340,10 +388,14 @@ class Biont_SubPlugins_PluginsModel {
 				return;
 			}
 
-			$this->active_plugins[]         = $plugin;
-			$this->waiting_for_activation[] = $plugin;
+			$this->active_plugins[]       = $plugin;
+			$this->queues[ 'activate' ][] = $plugin;
 			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
 
+		}
+
+		if ( $redirect !== FALSE ) {
+			$this->redirect( $redirect );
 		}
 	}
 
@@ -362,7 +414,27 @@ class Biont_SubPlugins_PluginsModel {
 				$this->activate_plugin( $plugin );
 			}
 		}
-		wp_redirect( $this->get_menu_location() );
+		$this->redirect();
+	}
+
+	/**
+	 * Redirect to the desired location
+	 *
+	 * @param  $location
+	 */
+	private function redirect( $location = FALSE ) {
+
+		$this->handle_queues();
+		if ( isset( $_GET[ 'redirect' ] ) ) {
+			$target = $_GET[ 'redirect' ];
+		} elseif ( is_string( $location ) ) {
+			$target = $location;
+		} else {
+			$target = $this->get_menu_location();
+		}
+
+		wp_redirect( $target );
+
 	}
 
 	/**
@@ -380,8 +452,7 @@ class Biont_SubPlugins_PluginsModel {
 				$this->deactivate_plugin( $plugin );
 			}
 		}
-		wp_redirect( $this->get_menu_location() );
-		exit;
+		$this->redirect();
 	}
 
 	/**
@@ -389,17 +460,15 @@ class Biont_SubPlugins_PluginsModel {
 	 *
 	 * @param $plugin
 	 */
-	public function deactivate_plugin( $plugin ) {
+	public function deactivate_plugin( $plugin, $redirect = FALSE ) {
 
 		if ( FALSE !== $key = array_search( $plugin, $this->active_plugins ) ) {
-
-			$filename = $this->plugin_folder . '/' . basename(
-					$plugin, '.php'
-				) . '/' . $plugin;
-
 			unset( $this->active_plugins[ $key ] );
 			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
-			do_action( 'deactivate_' . plugin_basename( $filename ) );
+			$this->queues[ 'deactivate' ][] = $plugin;
+		}
+		if ( $redirect !== FALSE ) {
+			$this->redirect( $redirect );
 		}
 	}
 
@@ -433,7 +502,12 @@ class Biont_SubPlugins_PluginsModel {
 		do_action( $this->prefix . '_plugin_activation' );
 
 		// Add the actual plugin page
-		$view = new Biont_SubPlugins_PluginsView( $installed_plugins, $this->active_plugins, $this->prefix );
+		$view = new Biont_SubPlugins_PluginsView(
+			$installed_plugins,
+			$this->active_plugins,
+			$this->prefix,
+			$this->create_nonce()
+		);
 		$view->show();
 	}
 
@@ -445,6 +519,21 @@ class Biont_SubPlugins_PluginsModel {
 	public function get_menu_location() {
 
 		return admin_url( $this->menu_location . '?page=' . $this->prefix . '_plugins' );
+	}
+
+	private function verify_nonce() {
+
+		return ( isset( $_GET[ 'nonce' ] ) && wp_verify_nonce( $_GET[ 'nonce' ], $this->get_nonce_action() ) );
+	}
+
+	private function get_nonce_action() {
+
+		return $this->prefix . '_manage_plugins';
+	}
+
+	public function create_nonce() {
+
+		return wp_create_nonce( $this->get_nonce_action() );
 	}
 
 	/**
