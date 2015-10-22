@@ -438,6 +438,14 @@ class Biont_SubPlugins_PluginsModel {
 	}
 
 	/**
+	 * Delete all options used by this instance
+	 */
+	public function clear_data() {
+
+		delete_option( $this->prefix . '_active_plugins' );
+	}
+
+	/**
 	 * Deactivate a bunch of plugins in bulk
 	 *
 	 * @param $plugins
