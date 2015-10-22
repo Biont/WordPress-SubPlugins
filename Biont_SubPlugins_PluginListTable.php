@@ -93,14 +93,14 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 
 		//Build row actions
 
-		$actions = array();
-
+		$actions       = array();
+		$plugin_handle = basename( $item[ 'File' ] );
 		if ( $item[ 'Active' ] === TRUE ) {
 			$actions[ 'deactivate' ] = sprintf( '<a href="%s&action=%s&%s=%s&%s_plugins_changed=1&nonce=%s">%s</a>',
 			                                    $screen,
 			                                    'deactivate',
 			                                    $this->_args[ 'singular' ],
-			                                    esc_attr( $item[ 'File' ] ),
+			                                    esc_attr( $plugin_handle ),
 			                                    $this->prefix,
 			                                    $this->nonce,
 			                                    __( 'Deactivate' )
@@ -110,7 +110,7 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 			                                  $screen,
 			                                  'activate',
 			                                  $this->_args[ 'singular' ],
-			                                  esc_attr( $item[ 'File' ] ),
+			                                  esc_attr( $plugin_handle ),
 			                                  $this->prefix,
 			                                  $this->nonce,
 			                                  __( 'Activate' )
@@ -121,7 +121,7 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		                                $screen,
 		                                'delete',
 		                                $this->_args[ 'singular' ],
-		                                esc_attr( $item[ 'File' ] ),
+		                                esc_attr( $plugin_handle ),
 		                                $this->nonce,
 		                                __( 'Delete' )
 		);
@@ -179,7 +179,7 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 			/*$1%s*/
 			$this->_args[ 'singular' ],  //Let's simply repurpose the table's singular label ("plugin")
 			/*$2%s*/
-			$item[ 'File' ]                //The value of the checkbox should be the record's id
+			esc_attr( basename( $item[ 'File' ] ) )                //The value of the checkbox should be the record's id
 		);
 	}
 

@@ -67,18 +67,20 @@ class Biont_SubPlugins_PluginsModel {
 	 */
 	public function __construct( $plugin_folder, $prefix, $args = array() ) {
 
-		$defaults = array(
-			'menu_location' => 'options-general.php',
-			'page_title'    => __( 'Sub-Plugins' ),
-			'menu_title'    => __( 'Plugins' ),
+		$defaults   = array(
+			'menu_location'    => 'options-general.php',
+			'page_title'       => __( 'Sub-Plugins' ),
+			'menu_title'       => __( 'Plugins' ),
+			'load_textdomains' => FALSE,
 		);
-		$args     = wp_parse_args( $args, $defaults );
+		$this->args = wp_parse_args( $args, $defaults );
 
-		$this->prefix        = $prefix;
-		$this->plugin_folder = $plugin_folder;
-		$this->menu_location = $args[ 'menu_location' ];
-		$this->page_title    = $args[ 'page_title' ];
-		$this->menu_title    = $args[ 'menu_title' ];
+		$this->prefix         = $prefix;
+		$this->plugin_folder  = $plugin_folder;
+		$this->menu_location  = $this->args[ 'menu_location' ];
+		$this->page_title     = $this->args[ 'page_title' ];
+		$this->menu_title     = $this->args[ 'menu_title' ];
+		$this->active_plugins = get_option( $this->prefix . '_active_plugins', array() );
 
 		self::$instances[ $prefix ] = $this;
 
@@ -88,8 +90,6 @@ class Biont_SubPlugins_PluginsModel {
 	 * Add hooks for adding settings and menus and then load the active plugins
 	 */
 	public function register() {
-
-		$this->active_plugins = get_option( $this->prefix . '_active_plugins', array() );
 
 		if ( is_admin() ) {
 
@@ -264,17 +264,17 @@ class Biont_SubPlugins_PluginsModel {
 
 					$markup = apply_filters( $this->prefix . '_plugin_data_markup', TRUE );
 
-					$data = biont_get_plugin_data( $this->prefix, $filename, $markup );
-
+					$data          = biont_get_plugin_data( $this->prefix, $filename, $markup );
+					$plugin_handle = basename( $filename );
 					if ( ! empty( $data[ 'Name' ] ) ) {
-						$data[ 'File' ] = basename( $filename );
+						$data[ 'File' ] = $filename;
 
-						if ( in_array( $data[ 'File' ], $this->active_plugins ) ) {
+						if ( $this->is_plugin_active( $plugin_handle ) ) {
 							$data[ 'Active' ] = TRUE;
 						} else {
 							$data[ 'Active' ] = FALSE;
 						}
-						$this->installed_plugins[] = $data;
+						$this->installed_plugins[ $plugin_handle ] = $data;
 					}
 
 				}
@@ -311,37 +311,56 @@ class Biont_SubPlugins_PluginsModel {
 	public function load_plugins() {
 
 		do_action( $this->prefix . '_pre_load_subplugins', $this );
+		$invalid = array();
+		foreach ( $this->active_plugins as $plugin => $data ) {
 
-		foreach ( $this->active_plugins as $plugin ) {
-
-			if ( empty( $plugin ) ) {
+			if ( ! is_string( $plugin ) ) {
+				$invalid[] = $plugin;
 				continue;
 			}
 
 			$filename = $this->get_plugin_file_path( $plugin );
 
 			if ( ! $this->plugin_exists( $filename ) ) {
+				$invalid[] = $plugin;
 				continue;
 			}
 
 			/**
-			 * Try to load language files for this plugin
+			 * If the plugin file was changed, reactivate it automatically
 			 */
-			$data = get_file_data( $filename, array(
-				'TextDomain' => 'Text Domain',
-				'DomainPath' => 'Domain Path',
-			) );
-
-			if ( isset( $data[ 'TextDomain' ], $data[ 'DomainPath' ] ) ) {
-				$domain = $data[ 'TextDomain' ];
-				$path   = dirname( $filename ) . $data[ 'DomainPath' ];
-				$locale = get_locale();
-
-				$mofile = $domain . '-' . $locale . '.mo';
-				load_textdomain( $domain, $path . '/' . $mofile );
+			if ( isset( $data[ 'Timestamp' ] ) && $data[ 'Timestamp' ] !== filemtime( $filename ) ) {
+				$this->queues[ 'activate' ][] = $plugin;
 			}
 
+			if ( $this->args[ 'load_textdomains' ] ) {
+				/**
+				 * Try to load language files for this plugin
+				 */
+				$data = get_file_data( $filename, array(
+					'TextDomain' => 'Text Domain',
+					'DomainPath' => 'Domain Path',
+				) );
+
+				if ( isset( $data[ 'TextDomain' ], $data[ 'DomainPath' ] ) ) {
+					$domain = $data[ 'TextDomain' ];
+					$path   = dirname( $filename ) . $data[ 'DomainPath' ];
+					$locale = get_locale();
+
+					$mofile = $domain . '-' . $locale . '.mo';
+					load_textdomain( $domain, $path . '/' . $mofile );
+				}
+			}
 			include_once( $filename );
+		}
+		/**
+		 * Clean up in case there's been some invalid plugin data
+		 */
+		if ( ! empty( $invalid ) ) {
+			foreach ( $invalid as $invalid_plugin ) {
+				unset( $this->active_plugins[ $invalid_plugin ] );
+			}
+			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
 		}
 	}
 
@@ -375,31 +394,6 @@ class Biont_SubPlugins_PluginsModel {
 	}
 
 	/**
-	 * Adds a plugin to the active plugins array and to the activation queue
-	 *
-	 * @param $plugin
-	 */
-	public function activate_plugin( $plugin, $redirect = FALSE ) {
-
-		if ( ! in_array( $plugin, $this->active_plugins ) ) {
-
-			$filename = $this->get_plugin_file_path( $plugin );
-			if ( ! $this->plugin_exists( $filename ) ) {
-				return;
-			}
-
-			$this->active_plugins[]       = $plugin;
-			$this->queues[ 'activate' ][] = $plugin;
-			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
-
-		}
-
-		if ( $redirect !== FALSE ) {
-			$this->redirect( $redirect );
-		}
-	}
-
-	/**
 	 * Activate a bunch of plugins in bulk
 	 *
 	 * @param $plugins
@@ -415,6 +409,67 @@ class Biont_SubPlugins_PluginsModel {
 			}
 		}
 		$this->redirect();
+	}
+
+	/**
+	 * Deactivate a bunch of plugins in bulk
+	 *
+	 * @param $plugins
+	 */
+	public function bulk_deactivate( $plugins ) {
+
+		if ( ! empty( $plugins ) ) {
+			if ( is_string( $plugins ) ) {
+				$plugins = array( $plugins );
+			}
+			foreach ( $plugins as $plugin ) {
+				$this->deactivate_plugin( $plugin );
+			}
+		}
+		$this->redirect();
+	}
+
+	/**
+	 * Adds a plugin to the active plugins array and to the activation queue
+	 *
+	 * @param $plugin
+	 */
+	public function activate_plugin( $plugin, $redirect = FALSE ) {
+
+		if ( ! $this->is_plugin_active( $plugin ) ) {
+
+			$filename = $this->get_plugin_file_path( $plugin );
+			if ( ! $this->plugin_exists( $filename ) ) {
+				return;
+			}
+			$data                            = biont_get_plugin_data( $this->prefix, $filename );
+			$data[ 'Timestamp' ]             = filemtime( $filename );
+			$this->active_plugins[ $plugin ] = $data;
+			$this->queues[ 'activate' ][]    = $plugin;
+			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
+
+		}
+
+		if ( $redirect !== FALSE ) {
+			$this->redirect( $redirect );
+		}
+	}
+
+	/**
+	 * Deactivate a single plugin
+	 *
+	 * @param $plugin
+	 */
+	public function deactivate_plugin( $plugin, $redirect = FALSE ) {
+
+		if ( $this->is_plugin_active( $plugin ) ) {
+			unset( $this->active_plugins[ $plugin ] );
+			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
+			$this->queues[ 'deactivate' ][] = $plugin;
+		}
+		if ( $redirect !== FALSE ) {
+			$this->redirect( $redirect );
+		}
 	}
 
 	/**
@@ -446,41 +501,6 @@ class Biont_SubPlugins_PluginsModel {
 	}
 
 	/**
-	 * Deactivate a bunch of plugins in bulk
-	 *
-	 * @param $plugins
-	 */
-	public function bulk_deactivate( $plugins ) {
-
-		if ( ! empty( $plugins ) ) {
-			if ( is_string( $plugins ) ) {
-				$plugins = array( $plugins );
-			}
-			foreach ( $plugins as $plugin ) {
-				$this->deactivate_plugin( $plugin );
-			}
-		}
-		$this->redirect();
-	}
-
-	/**
-	 * Deactivate a single plugin
-	 *
-	 * @param $plugin
-	 */
-	public function deactivate_plugin( $plugin, $redirect = FALSE ) {
-
-		if ( FALSE !== $key = array_search( $plugin, $this->active_plugins ) ) {
-			unset( $this->active_plugins[ $key ] );
-			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
-			$this->queues[ 'deactivate' ][] = $plugin;
-		}
-		if ( $redirect !== FALSE ) {
-			$this->redirect( $redirect );
-		}
-	}
-
-	/**
 	 * Is a specific plugin currently active?
 	 *
 	 * @param $plugin
@@ -490,10 +510,10 @@ class Biont_SubPlugins_PluginsModel {
 	public function is_plugin_active( $plugin ) {
 
 		if ( is_array( $plugin ) && isset( $plugin[ 'File' ] ) ) {
-			$plugin = $plugin[ 'File' ];
+			$plugin = basename( $plugin[ 'File' ] );
 		}
 
-		return ( in_array( $plugin, $this->active_plugins ) );
+		return isset( $this->active_plugins[ $plugin ] );
 	}
 
 	/**
