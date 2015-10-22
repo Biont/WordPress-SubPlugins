@@ -337,11 +337,6 @@ class Biont_SubPlugins_PluginsModel {
 				/**
 				 * Try to load language files for this plugin
 				 */
-				$data = get_file_data( $filename, array(
-					'TextDomain' => 'Text Domain',
-					'DomainPath' => 'Domain Path',
-				) );
-
 				if ( isset( $data[ 'TextDomain' ], $data[ 'DomainPath' ] ) ) {
 					$domain = $data[ 'TextDomain' ];
 					$path   = dirname( $filename ) . $data[ 'DomainPath' ];
