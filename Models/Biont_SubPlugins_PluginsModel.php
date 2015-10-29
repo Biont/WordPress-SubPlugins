@@ -438,6 +438,7 @@ class Biont_SubPlugins_PluginsModel {
 				return;
 			}
 			$data                            = biont_get_plugin_data( $this->prefix, $filename );
+			$data[ 'File' ]                  = $filename;
 			$data[ 'Timestamp' ]             = filemtime( $filename );
 			$this->active_plugins[ $plugin ] = $data;
 			$this->queues[ 'activate' ][]    = $plugin;
