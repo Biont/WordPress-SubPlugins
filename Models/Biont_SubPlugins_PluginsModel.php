@@ -255,7 +255,7 @@ class Biont_SubPlugins_PluginsModel {
 	 * @TODO: Check for existence of file_data?
 	 * @return array
 	 */
-	public function get_installed_plugins() {
+	public function get_installed_plugins( $translate = FALSE ) {
 
 		if ( $this->installed_plugins == NULL ) {
 			foreach ( glob( $this->plugin_folder . '/*', GLOB_ONLYDIR ) as $plugin_folder ) {
@@ -275,6 +275,12 @@ class Biont_SubPlugins_PluginsModel {
 							$data[ 'Active' ] = FALSE;
 						}
 						$this->installed_plugins[ $plugin_handle ] = $data;
+					}
+					if ( $translate && $this->load_textdomain( $filename, $data ) ) {
+
+						foreach ( $data as $k => $v ) {
+							$data[ $k ] = __( $v, $data[ 'TextDomain' ] );
+						}
 					}
 
 				}
@@ -334,17 +340,7 @@ class Biont_SubPlugins_PluginsModel {
 			}
 
 			if ( $this->args[ 'load_textdomains' ] ) {
-				/**
-				 * Try to load language files for this plugin
-				 */
-				if ( isset( $data[ 'TextDomain' ], $data[ 'DomainPath' ] ) ) {
-					$domain = $data[ 'TextDomain' ];
-					$path   = dirname( $filename ) . $data[ 'DomainPath' ];
-					$locale = get_locale();
-
-					$mofile = $domain . '-' . $locale . '.mo';
-					load_textdomain( $domain, $path . '/' . $mofile );
-				}
+				$this->load_textdomain( $filename, $data );
 			}
 			include_once( $filename );
 		}
@@ -357,6 +353,24 @@ class Biont_SubPlugins_PluginsModel {
 			}
 			update_option( $this->prefix . '_active_plugins', $this->active_plugins );
 		}
+	}
+
+	private function load_textdomain( $plugin_file, $plugin_data ) {
+
+		/**
+		 * Try to load language files for this plugin
+		 */
+		if ( isset( $plugin_data[ 'TextDomain' ], $plugin_data[ 'DomainPath' ] ) ) {
+			$domain = $plugin_data[ 'TextDomain' ];
+			$path   = dirname( $plugin_file ) . $plugin_data[ 'DomainPath' ];
+			$locale = get_locale();
+
+			$mofile = $domain . '-' . $locale . '.mo';
+
+			return load_textdomain( $domain, $path . '/' . $mofile );
+		}
+
+		return FALSE;
 	}
 
 	/**
