@@ -84,15 +84,7 @@ if ( ! function_exists( 'biont_get_plugin_data' ) ) {
 
 			$plugin_data = get_file_data( $plugin_file, $default_headers, 'plugin' );
 
-			// Site Wide Only is the old header for Network
-			if ( ! $plugin_data[ 'Network' ] && $plugin_data[ '_sitewide' ] ) {
-				_deprecated_argument( __FUNCTION__, '3.0',
-				                      sprintf( __( 'The <code>%1$s</code> plugin header is deprecated. Use <code>%2$s</code> instead.' ),
-				                               'Site Wide Only: true', 'Network: true' ) );
-				$plugin_data[ 'Network' ] = $plugin_data[ '_sitewide' ];
-			}
 			$plugin_data[ 'Network' ] = ( 'true' == strtolower( $plugin_data[ 'Network' ] ) );
-			unset( $plugin_data[ '_sitewide' ] );
 
 			if ( $markup || $translate ) {
 				$plugin_data = _get_plugin_data_markup_translate( $plugin_file, $plugin_data, $markup, $translate );
