@@ -32,14 +32,14 @@ if ( ! function_exists( 'add_subplugin_support' ) ) {
 	}
 }
 
-if ( ! function_exists( 'biont_get_subplugin_model' ) ) {
+if ( ! function_exists( 'biont_get_subplugin_handler' ) ) {
 
 	/**
 	 * @param $prefix
 	 *
 	 * @return Biont_SubPlugins
 	 */
-	function biont_get_subplugin_model( $prefix ) {
+	function biont_get_subplugin_handler( $prefix ) {
 
 		return Biont_SubPlugins::get_instance( $prefix );
 
