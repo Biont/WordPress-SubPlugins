@@ -1,4 +1,5 @@
 <?php # -*- coding: utf-8 -*-
+defined( 'ABSPATH' ) or die();
 
 /**
  * Class PluginsModel

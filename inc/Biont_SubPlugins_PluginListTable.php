@@ -1,4 +1,5 @@
 <?php
+defined( 'ABSPATH' ) or die();
 
 /**
  * Check that 'class-wp-list-table.php' is available

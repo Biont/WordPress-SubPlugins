@@ -1,4 +1,5 @@
 <?php
+defined( 'ABSPATH' ) or die();
 
 /**
  * Class Biont_SubPlugins_DefaultUI

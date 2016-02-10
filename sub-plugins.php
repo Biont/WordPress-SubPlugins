@@ -1,4 +1,5 @@
 <?php # -*- coding: utf-8 -*-
+defined( 'ABSPATH' ) or die();
 
 if ( ! function_exists( 'add_subplugin_support' ) ) {
 	/**
