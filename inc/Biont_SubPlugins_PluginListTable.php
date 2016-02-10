@@ -201,7 +201,7 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 		$actions = array(
 			'activate'   => __( 'Activate' ),
 			'deactivate' => __( 'Deactivate' ),
-			'delete'     => __( 'Delete' )
+			//'delete'     => __( 'Delete' )
 		);
 
 		return $actions;

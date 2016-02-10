@@ -7,6 +7,9 @@
  */
 class Biont_SubPlugins_DefaultUI {
 
+	/**
+	 * @var Biont_SubPlugins
+	 */
 	private $plugins;
 
 	public function __construct( Biont_SubPlugins $plugins ) {

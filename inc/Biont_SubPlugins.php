@@ -9,7 +9,7 @@ class Biont_SubPlugins {
 	/**
 	 * Store all instances of this Model so that it can be accessed later on
 	 *
-	 * @var array
+	 * @var Biont_SubPlugins[]
 	 */
 	static $instances = array();
 	/**
@@ -36,12 +36,7 @@ class Biont_SubPlugins {
 	 * @var array
 	 */
 	private $active_plugins = array();
-	/**
-	 * URL segment of the plugin page menu
-	 *
-	 * @var string
-	 */
-	private $menu_location;
+
 	/**
 	 * Temporary storage to defer plugin activation
 	 *
@@ -55,9 +50,9 @@ class Biont_SubPlugins {
 	/**
 	 * Parse the arguments and set the class variables
 	 *
-	 * @param       $plugin_folder
-	 * @param       $prefix
-	 * @param array $args
+	 * @param string $plugin_folder
+	 * @param string $prefix
+	 * @param array  $args
 	 */
 	public function __construct( $plugin_folder, $prefix, $args = array() ) {
 
@@ -81,9 +76,9 @@ class Biont_SubPlugins {
 	/**
 	 * Returns the SubPlugin instance with the given prefix
 	 *
-	 * @param $prefix
+	 * @param string $prefix
 	 *
-	 * @return null
+	 * @return Biont_SubPlugins
 	 */
 	public static function get_instance( $prefix ) {
 
@@ -166,6 +161,13 @@ class Biont_SubPlugins {
 		}
 	}
 
+	/**
+	 * Returns the full path to the specified plugin file
+	 *
+	 * @param $plugin
+	 *
+	 * @return string
+	 */
 	public function get_plugin_file_path( $plugin ) {
 
 		return $this->plugin_folder . '/' . basename( $plugin, '.php' ) . '/' . $plugin;
@@ -184,6 +186,14 @@ class Biont_SubPlugins {
 		return ( file_exists( $filename ) && ! is_dir( $filename ) );
 	}
 
+	/**
+	 * Loads the specified text domain
+	 *
+	 * @param $plugin_file
+	 * @param $plugin_data
+	 *
+	 * @return bool
+	 */
 	private function load_textdomain( $plugin_file, $plugin_data ) {
 
 		/**
@@ -207,53 +217,55 @@ class Biont_SubPlugins {
 	 */
 	private function handle_queues() {
 
-		if ( ! empty( $this->queues ) ) {
-			foreach ( $this->queues as $type => $queue ) {
-				foreach ( $queue as $index => $plugin ) {
-					unset( $this->queues[ $type ][ $index ] );
-					$filename = $this->get_plugin_file_path( $plugin );
-					if ( ! $this->plugin_exists( $filename ) ) {
-						continue;
-					}
-					/**
-					 * When this runs, the plugin was already removed from the active plugins. So manually
-					 * load it one last time
-					 */
-					if ( $type === 'deactivate' ) {
-						include_once( $filename );
-					}
-					$plugin_data = biont_get_plugin_data( $this->prefix, $filename );
-
-					/**
-					 * Build a hook name that is compatible with register_activation_hook()
-					 * from within the main subplugin file :)
-					 */
-					$hookname = $type . '_' . plugin_basename( $filename );
-					do_action( $hookname, $plugin_data );
-
-					/**
-					 * If the plugin is deactivated right from its activation hook, don't call the following action
-					 */
-					if ( $this->is_plugin_active( $plugin ) ) {
-						/**
-						 * Build a general hookname, for example
-						 *
-						 * 'xyz_activate_plugin'
-						 */
-						$hookname = $this->prefix . '_' . $type . '_plugin';
-						do_action(
-							$hookname,
-							$plugin,
-							$plugin_data,
-							$filename,
-							$this
-						);
-					}
-
-				}
-			}
-
+		if ( empty( $this->queues ) ) {
+			return;
 		}
+
+		foreach ( $this->queues as $type => $queue ) {
+			foreach ( $queue as $index => $plugin ) {
+				unset( $this->queues[ $type ][ $index ] );
+				$filename = $this->get_plugin_file_path( $plugin );
+				if ( ! $this->plugin_exists( $filename ) ) {
+					continue;
+				}
+				/**
+				 * When this runs, the plugin was already removed from the active plugins. So manually
+				 * load it one last time
+				 */
+				if ( $type === 'deactivate' ) {
+					include_once( $filename );
+				}
+				$plugin_data = biont_get_plugin_data( $this->prefix, $filename );
+
+				/**
+				 * Build a hook name that is compatible with register_activation_hook()
+				 * from within the main subplugin file :)
+				 */
+				$hookname = $type . '_' . plugin_basename( $filename );
+				do_action( $hookname, $plugin_data );
+
+				/**
+				 * If the plugin is deactivated right from its activation hook, don't call the following action
+				 */
+				if ( $this->is_plugin_active( $plugin ) ) {
+					/**
+					 * Build a general hookname, for example
+					 *
+					 * 'xyz_activate_plugin'
+					 */
+					$hookname = $this->prefix . '_' . $type . '_plugin';
+					do_action(
+						$hookname,
+						$plugin,
+						$plugin_data,
+						$filename,
+						$this
+					);
+				}
+
+			}
+		}
+
 	}
 
 	/**
@@ -362,13 +374,13 @@ class Biont_SubPlugins {
 				$this->activate_plugin( $plugin );
 			}
 		}
-		$this->redirect($redirect);
+		$this->redirect( $redirect );
 	}
 
 	/**
 	 * Adds a plugin to the active plugins array and to the activation queue
 	 *
-	 * @param $plugin
+	 * @param      $plugin
 	 * @param bool $redirect
 	 */
 	public function activate_plugin( $plugin, $redirect = FALSE ) {
@@ -428,7 +440,7 @@ class Biont_SubPlugins {
 				$this->deactivate_plugin( $plugin );
 			}
 		}
-		$this->redirect($redirect);
+		$this->redirect( $redirect );
 	}
 
 	/**

@@ -1,6 +1,13 @@
 <?php # -*- coding: utf-8 -*-
 
 if ( ! function_exists( 'add_subplugin_support' ) ) {
+	/**
+	 * @param       $plugin_folder
+	 * @param       $prefix
+	 * @param array $args
+	 *
+	 * @return Biont_SubPlugins
+	 */
 	function add_subplugin_support( $plugin_folder, $prefix, $args = array() ) {
 
 		foreach (
@@ -40,6 +47,17 @@ if ( ! function_exists( 'biont_get_subplugin_model' ) ) {
 
 if ( ! function_exists( 'biont_get_plugin_data' ) ) {
 
+	/**
+	 * Pretty much the same as WP-core get_plugin_data(),
+	 * but with a few adaptions that sadly weren't possible with the original function
+	 *
+	 * @param      $prefix
+	 * @param      $plugin_file
+	 * @param bool $markup
+	 * @param bool $translate
+	 *
+	 * @return array|bool|mixed
+	 */
 	function biont_get_plugin_data( $prefix, $plugin_file, $markup = TRUE, $translate = TRUE ) {
 
 		if ( ! function_exists( '_get_plugin_data_markup_translate' ) ) {
