@@ -9,6 +9,7 @@ if ( ! class_exists( '\\WP_List_Table' ) ) {
 
 class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 
+	protected $prefix;
 	protected $installed = array();
 	protected $nonce;
 
@@ -26,25 +27,6 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 			                     'ajax'     => FALSE        //does this table support ajax?
 		                     ) );
 
-	}
-
-	/**
-	 * Generate the table navigation above or below the table
-	 *
-	 * @since  3.1.0
-	 * @access protected
-	 *
-	 * @param string $which
-	 */
-	protected function display_tablenav( $which ) {
-
-		/**
-		 * Custom nonce
-		 */
-		if ( 'top' == $which ) {
-			echo '<input type="hidden" name="nonce" value="' . $this->nonce . '">';
-		}
-		parent::display_tablenav( FALSE );
 	}
 
 	/** ************************************************************************
@@ -201,55 +183,6 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 	}
 
 	/** ************************************************************************
-	 * REQUIRED! This method dictates the table's columns and titles. This should
-	 * return an array where the key is the column slug (and class) and the value
-	 * is the column's title text. If you need a checkbox for bulk actions, refer
-	 * to the $columns array below.
-	 *
-	 * The 'cb' column is treated differently than the rest. If including a checkbox
-	 * column in your table you must create a column_cb() method. If you don't need
-	 * bulk actions or checkboxes, simply leave the 'cb' entry out of your array.
-	 *
-	 * @see WP_List_Table::::single_row_columns()
-	 * @return array An associative array containing column information: 'slugs'=>'Visible Titles'
-	 **************************************************************************/
-	function get_columns() {
-
-		$columns = array(
-			'cb'          => '<input type="checkbox" />', //Render a checkbox instead of text
-			'plugin'      => __( 'Plugin' ),
-			'description' => __( 'Description' ),
-		);
-
-		return $columns;
-	}
-
-	/** ************************************************************************
-	 * Optional. If you want one or more columns to be sortable (ASC/DESC toggle),
-	 * you will need to register it here. This should return an array where the
-	 * key is the column that needs to be sortable, and the value is db column to
-	 * sort by. Often, the key and value will be the same, but this is not always
-	 * the case (as the value is a column name from the database, not the list table).
-	 *
-	 * This method merely defines which columns should be sortable and makes them
-	 * clickable - it does not handle the actual sorting. You still need to detect
-	 * the ORDERBY and ORDER querystring variables within prepare_items() and sort
-	 * your data accordingly (usually by modifying your query).
-	 *
-	 * @return array An associative array containing all the columns that should be sortable:
-	 *               'slugs'=>array('data_values',bool)
-	 **************************************************************************/
-	function get_sortable_columns() {
-
-		$sortable_columns = array(
-			//            'plugin' => array('plugin', false),     //true means it's already sorted
-			//            'description' => array('desription', false),
-		);
-
-		return $sortable_columns;
-	}
-
-	/** ************************************************************************
 	 * Optional. If you need to include bulk actions in your list table, this is
 	 * the place to define them. Bulk actions are an associative array in the format
 	 * 'slug'=>'Visible Title'
@@ -341,6 +274,74 @@ class Biont_SubPlugins_PluginListTable extends WP_List_Table {
 			                            'total_pages' => ceil( $total_items / $per_page )
 			                            //WE have to calculate the total number of pages
 		                            ) );
+	}
+
+	/** ************************************************************************
+	 * REQUIRED! This method dictates the table's columns and titles. This should
+	 * return an array where the key is the column slug (and class) and the value
+	 * is the column's title text. If you need a checkbox for bulk actions, refer
+	 * to the $columns array below.
+	 *
+	 * The 'cb' column is treated differently than the rest. If including a checkbox
+	 * column in your table you must create a column_cb() method. If you don't need
+	 * bulk actions or checkboxes, simply leave the 'cb' entry out of your array.
+	 *
+	 * @see WP_List_Table::::single_row_columns()
+	 * @return array An associative array containing column information: 'slugs'=>'Visible Titles'
+	 **************************************************************************/
+	function get_columns() {
+
+		$columns = array(
+			'cb'          => '<input type="checkbox" />', //Render a checkbox instead of text
+			'plugin'      => __( 'Plugin' ),
+			'description' => __( 'Description' ),
+		);
+
+		return $columns;
+	}
+
+	/** ************************************************************************
+	 * Optional. If you want one or more columns to be sortable (ASC/DESC toggle),
+	 * you will need to register it here. This should return an array where the
+	 * key is the column that needs to be sortable, and the value is db column to
+	 * sort by. Often, the key and value will be the same, but this is not always
+	 * the case (as the value is a column name from the database, not the list table).
+	 *
+	 * This method merely defines which columns should be sortable and makes them
+	 * clickable - it does not handle the actual sorting. You still need to detect
+	 * the ORDERBY and ORDER querystring variables within prepare_items() and sort
+	 * your data accordingly (usually by modifying your query).
+	 *
+	 * @return array An associative array containing all the columns that should be sortable:
+	 *               'slugs'=>array('data_values',bool)
+	 **************************************************************************/
+	function get_sortable_columns() {
+
+		$sortable_columns = array(
+			//            'plugin' => array('plugin', false),     //true means it's already sorted
+			//            'description' => array('desription', false),
+		);
+
+		return $sortable_columns;
+	}
+
+	/**
+	 * Generate the table navigation above or below the table
+	 *
+	 * @since  3.1.0
+	 * @access protected
+	 *
+	 * @param string $which
+	 */
+	protected function display_tablenav( $which ) {
+
+		/**
+		 * Custom nonce
+		 */
+		if ( 'top' == $which ) {
+			echo '<input type="hidden" name="nonce" value="' . $this->nonce . '">';
+		}
+		parent::display_tablenav( FALSE );
 	}
 
 }

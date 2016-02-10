@@ -6,14 +6,14 @@ if ( ! function_exists( 'add_subplugin_support' ) ) {
 		foreach (
 			array(
 				'Biont_SubPlugins_PluginListTable',
-				'Models/Biont_SubPlugins_PluginsModel',
-				'Views/Biont_SubPlugins_PluginsView',
+				'Biont_SubPlugins_DefaultUI',
+				'Biont_SubPlugins',
 			) as $file
 		) {
-			require_once dirname( __FILE__ ) . '/' . $file . '.php';
+			require_once dirname( __FILE__ ) . '/inc/' . $file . '.php';
 		}
 
-		$plugins = new Biont_SubPlugins_PluginsModel( $plugin_folder, $prefix, $args );
+		$plugins = new Biont_SubPlugins( $plugin_folder, $prefix, $args );
 		if ( did_action( 'plugins_loaded' ) ) {
 			$plugins->register();
 		} else {
@@ -29,11 +29,11 @@ if ( ! function_exists( 'biont_get_subplugin_model' ) ) {
 	/**
 	 * @param $prefix
 	 *
-	 * @return Biont_SubPlugins_PluginsModel
+	 * @return Biont_SubPlugins
 	 */
 	function biont_get_subplugin_model( $prefix ) {
 
-		return Biont_SubPlugins_PluginsModel::get_instance( $prefix );
+		return Biont_SubPlugins::get_instance( $prefix );
 
 	}
 }
