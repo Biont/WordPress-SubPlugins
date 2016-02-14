@@ -14,7 +14,7 @@ This assumes the following folder structure:
 
 ### wp-content/plugins/my-plugin/my-plugin.php
 
-
+```php
     /**
      * Plugin Name:    My Plugin
      * Description:    A demo plugin that has a cool sub-plugin feature!
@@ -41,6 +41,7 @@ This assumes the following folder structure:
     // Will show up under "Dashboard". See https://codex.wordpress.org/Function_Reference/add_submenu_page 
     // for more information on where to put admin menu pages.
     add_subplugin_support( $sub_plugin_folder, $prefix, $plugin_args );
+```
 
 ### wp-content/plugins/my-plugin/plugins/hello-world/hello-world.php
 
@@ -52,7 +53,7 @@ This makes sub-plugins incompatible with WordPress (in case a user manually uplo
 and also makes individual instances of the sub-plugin feature incompatible with each other to avoid confusion
 
 
-
+```php
     /**
      * BIONT-Plugin Name:    Hello World
      * Description:          A cool sub-plugin!
@@ -66,4 +67,4 @@ and also makes individual instances of the sub-plugin feature incompatible with 
      add_action('init', function(){
          echo 'Hello World!';
      });
-
+```

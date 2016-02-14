@@ -2,6 +2,7 @@
   "name": "biont/wordpress-subplugins",
   "type": "library",
   "description": "A library that allows you to add arbitrary new plugin pages to WordPress",
+  "license": "MIT",
   "keywords": [
     "wordpress",
     "plugin",
